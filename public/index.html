@@ -391,7 +391,7 @@ function previewNewUserAvatar(event) {
 
 async function addUser() {
     const dn=document.getElementById('newDisplayName').value.trim(), u=document.getElementById('newUsername').value.trim(), p=document.getElementById('newPassword').value;
-    if(!dn||!u||p){showToast('מלא את כל השדות','error');return;}
+    if(!dn||!u||!p){showToast('מלא את כל השדות','error');return;}
     try {
         const d=await api('POST','/api/admin/user',{username:u,password:p,display_name:dn});
         // Upload avatar if selected
