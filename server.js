@@ -165,6 +165,10 @@ app.post('/api/member/transaction', requireAuth, async (req, res) => {
         if (!type || !amount) return res.status(400).json({ error: 'חוסר נתונים' });
         if (!['give', 'receive'].includes(type)) return res.status(400).json({ error: 'סוג תנועה לא תקיף' });
         if (parseFloat(amount) <= 0) return res.status(400).json({ error: 'סכום חייב להיות חיובי' });
+        // Members can only deposit (receive type). Withdrawals require admin.
+        if (type === 'give') {
+            return res.status(403).json({ error: 'משיכה מהקופה דורשת אישור מנהל בלבד' });
+        }
         const result = await db.addTransaction(req.user.id, type, parseFloat(amount), description || '');
         res.json({ success: true, transaction: result });
     } catch (err) {
@@ -235,8 +239,15 @@ app.get('/api/admin/dashboard', requireAuth, requireAdmin, async (req, res) => {
 
 app.get('/api/admin/transactions', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const transactions = await db.getUserTransactions(100);
-        res.json(transactions);
+        const { userId } = req.query;
+        if (userId) {
+            const transactions = await db.getMyTransactions(parseInt(userId), 100);
+            const user = await db.getUserById(parseInt(userId));
+            res.json({ transactions, user });
+        } else {
+            const transactions = await db.getUserTransactions(100);
+            res.json({ transactions, user: null });
+        }
     } catch (err) {
         console.error('Admin transactions error:', err);
         res.status(500).json({ error: 'שגיאת שרת' });

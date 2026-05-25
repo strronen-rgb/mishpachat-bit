@@ -104,8 +104,11 @@ async function getFullBalance(userId) {
 async function getAdminDashboard() {
     const members = await getAllMembers();
     const dashboard = [];
+    let totalOwed = 0;
     for (const m of members) {
         const bal = await getFullBalance(m.id);
+        // balance > 0 means member owes money (gave more than received)
+        if (bal.balance > 0) totalOwed += bal.balance;
         dashboard.push({
             ...m,
             balance: bal.balance,
@@ -113,7 +116,6 @@ async function getAdminDashboard() {
             total_received: bal.received
         });
     }
-    const totalOwed = dashboard.reduce((sum, m) => sum + Math.max(0, m.balance), 0);
     return { members: dashboard, total_owed: totalOwed };
 }
 
