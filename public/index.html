@@ -39,22 +39,32 @@
         .avatar-teal { background: linear-gradient(135deg, #26A69A, #4DB6AC); }
         .avatar-indigo { background: linear-gradient(135deg, #5C6BC0, #7986CB); }
 
-        .camera-badge {
-            position: absolute; bottom: -2px; left: -2px; background: var(--primary); color: white;
+        /* ===== PROFILE AVATAR (CENTERED, LARGE) ===== */
+        .profile-avatar-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+        .profile-avatar-container { position: relative; display: inline-block; }
+        .profile-avatar-container .avatar { 
+            width: 100px; height: 100px; font-size: 2.2em; 
+            border: 4px solid var(--card); 
+            box-shadow: 0 4px 20px rgba(108,99,255,0.2);
+            transition: all 0.3s;
+        }
+        .profile-avatar-container .avatar:hover { transform: scale(1.05); }
+        .profile-avatar-container .camera-badge {
+            position: absolute; bottom: 2px; right: 2px; 
+            width: 30px; height: 30px; 
+            background: var(--primary); color: white;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             border: 2px solid var(--card); cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(108,99,255,0.3);
         }
-        .camera-badge:hover { background: var(--primary-dark); transform: scale(1.1); }
-        .camera-badge svg { width: 55%; height: 55%; fill: white; }
+        .profile-avatar-container .camera-badge:hover { background: var(--primary-dark); transform: scale(1.1); }
+        .profile-avatar-container .camera-badge svg { width: 55%; height: 55%; fill: white; }
 
-        /* ===== PROFILE SETTINGS ===== */
-        .profile-settings { text-align: center; padding: 30px 20px; }
-        .profile-settings .avatar-container { position: relative; display: inline-block; margin-bottom: 16px; }
-        .profile-settings .avatar { cursor: pointer; transition: all 0.3s; border: 4px solid var(--card); box-shadow: 0 4px 20px rgba(108,99,255,0.2); }
-        .profile-settings .avatar:hover { transform: scale(1.05); box-shadow: 0 8px 30px rgba(108,99,255,0.35); }
-        .profile-settings .camera-badge { width: 36px; height: 36px; border-width: 3px; }
-        .change-photo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; border-radius: 25px; background: rgba(108,99,255,0.1); color: var(--primary); font-weight: 600; font-size: 0.9em; cursor: pointer; transition: all 0.2s; border: none; font-family: inherit; margin-top: 8px; }
-        .change-photo-btn:hover { background: rgba(108,99,255,0.2); transform: translateY(-1px); }
+        /* ===== EDIT AVATAR OVERLAY ===== */
+        .edit-avatar-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; cursor: pointer; }
+        .profile-avatar-container:hover .edit-avatar-overlay { opacity: 1; }
+        .edit-avatar-overlay svg { width: 24px; height: 24px; fill: white; margin-bottom: 2px; }
+        .edit-avatar-overlay span { color: white; font-size: 0.65em; font-weight: 600; }
 
         /* ===== LOGIN ===== */
         .login-page { min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #6C63FF 0%, #A855F7 50%, #EC4899 100%); padding: 20px; position: relative; overflow: hidden; }
@@ -85,6 +95,7 @@
         .btn-ghost:hover { background: rgba(108,99,255,0.15); }
         .btn-sm { padding: 10px 18px; font-size: 0.88em; }
         .btn-lg { padding: 18px 36px; font-size: 1.1em; }
+        .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
         /* ===== APP LAYOUT ===== */
         .app-container { max-width: 960px; margin: 0 auto; padding: 16px; padding-bottom: calc(16px + var(--safe-bottom)); min-height: 100dvh; }
@@ -112,8 +123,8 @@
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
         .action-btn { padding: 22px 16px; border-radius: var(--radius); border: none; font-family: inherit; font-size: 1.05em; font-weight: 700; cursor: pointer; transition: all 0.25s; display: flex; flex-direction: column; align-items: center; gap: 8px; user-select: none; }
         .action-btn:active { transform: scale(0.96); }
-        .action-btn.give { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); color: #2E7D32; }
-        .action-btn.receive { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); color: #E65100; }
+        .action-btn.credit { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); color: #2E7D32; }
+        .action-btn.debit { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); color: #C62828; }
         .action-btn .icon { font-size: 2em; }
 
         /* ===== TRANSACTIONS ===== */
@@ -121,12 +132,16 @@
         .txn-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 12px; }
         .txn-item:last-child { border-bottom: none; }
         .txn-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15em; flex-shrink: 0; }
-        .txn-icon.give { background: #E8F5E9; } .txn-icon.receive { background: #FFF3E0; }
+        .txn-icon.credit { background: #E8F5E9; } .txn-icon.debit { background: #FFEBEE; }
         .txn-details { flex: 1; min-width: 0; }
         .txn-desc { font-weight: 600; font-size: 0.92em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .txn-date { color: var(--text-light); font-size: 0.8em; margin-top: 2px; }
         .txn-amount { font-weight: 700; font-size: 1.05em; direction: ltr; white-space: nowrap; flex-shrink: 0; }
-        .txn-amount.give { color: var(--success); } .txn-amount.receive { color: var(--warning); }
+        .txn-amount.credit { color: var(--success); } .txn-amount.debit { color: var(--danger); }
+        .txn-receipt { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; flex-shrink: 0; cursor: pointer; border: 1px solid var(--border); }
+        .txn-receipt img { width: 100%; height: 100%; object-fit: cover; }
+        .txn-receipt-placeholder { width: 36px; height: 36px; border-radius: 8px; background: #F0F0F0; display: flex; align-items: center; justify-content: center; font-size: 0.8em; cursor: pointer; flex-shrink: 0; border: 1px dashed var(--border); color: var(--text-light); }
+        .txn-receipt-placeholder:hover { background: #E0E0E0; }
 
         /* ===== ADMIN ===== */
         .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -135,12 +150,14 @@
         .summary-label { color: var(--text-light); font-size: 0.78em; margin-top: 4px; }
         .summary-card.highlight { background: linear-gradient(135deg, var(--primary), #A855F7); color: white; }
         .summary-card.highlight .summary-label { color: rgba(255,255,255,0.8); }
-        .member-card { display: flex; align-items: center; padding: 14px 16px; background: #F8F9FA; border-radius: var(--radius-sm); margin-bottom: 10px; gap: 12px; }
+        .member-card { display: flex; align-items: center; padding: 14px 16px; background: #F8F9FA; border-radius: var(--radius-sm); margin-bottom: 10px; gap: 12px; cursor: pointer; transition: all 0.2s; }
+        .member-card:hover { background: #EEF0F3; }
         .member-info { flex: 1; min-width: 0; }
         .member-name { font-weight: 600; font-size: 0.95em; }
         .member-stats { color: var(--text-light); font-size: 0.8em; margin-top: 2px; }
         .member-balance { font-weight: 800; font-size: 1.15em; direction: ltr; white-space: nowrap; flex-shrink: 0; }
         .member-balance.owes { color: var(--danger); } .member-balance.owed { color: var(--success); } .member-balance.zero { color: var(--text-light); }
+        .member-actions { display: flex; gap: 6px; margin-right: 8px; }
 
         /* ===== TABS ===== */
         .tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--card); padding: 5px; border-radius: var(--radius-sm); box-shadow: var(--shadow); overflow-x: auto; }
@@ -157,12 +174,30 @@
         .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
         .modal-actions .btn { flex: 1; }
 
+        /* ===== RECEIPT UPLOAD IN MODAL ===== */
+        .receipt-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+        .receipt-upload-area:hover { border-color: var(--primary); background: rgba(108,99,255,0.03); }
+        .receipt-upload-area.has-image { padding: 8px; }
+        .receipt-preview { max-width: 100%; max-height: 200px; border-radius: 8px; }
+        .receipt-upload-hint { color: var(--text-light); font-size: 0.85em; }
+        .receipt-upload-hint .icon { font-size: 1.5em; display: block; margin-bottom: 4px; }
+
         /* ===== TOAST ===== */
         .toast { position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(120px); background: #333; color: white; padding: 14px 28px; border-radius: 50px; font-weight: 500; font-size: 0.92em; z-index: 2000; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; max-width: 90vw; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.success { background: var(--success); } .toast.error { background: var(--danger); }
         .empty-state { text-align: center; padding: 36px 20px; color: var(--text-light); }
         .empty-state .icon { font-size: 2.8em; margin-bottom: 10px; }
+
+        /* ===== IMAGE VIEWER ===== */
+        .image-viewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; }
+        .image-viewer.active { display: flex; }
+        .image-viewer img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+        .image-viewer-close { position: absolute; top: 20px; left: 20px; color: white; font-size: 2em; cursor: pointer; background: none; border: none; }
+
+        /* ===== SOUND TOGGLE ===== */
+        .sound-toggle { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 16px; z-index: 100; }
+        .sound-toggle button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--card); box-shadow: var(--shadow); cursor: pointer; font-size: 1.2em; display: flex; align-items: center; justify-content: center; }
 
         /* ===== RESPONSIVE ===== */
         @media (min-width: 768px) {
@@ -172,19 +207,17 @@
             .summary-grid { gap: 16px; } .summary-card { padding: 22px 18px; } .summary-value { font-size: 2.2em; }
             .modal { border-radius: 24px; padding: 32px; max-width: 440px; max-height: none; }
             .modal-handle { display: none; } .modal-overlay { align-items: center; padding: 20px; }
-            .profile-settings .avatar.avatar-xl { width: 140px; height: 140px; font-size: 2.8em; }
+            .profile-avatar-container .avatar { width: 120px; height: 120px; font-size: 2.5em; }
         }
         @media (max-width: 480px) {
             .app-container { padding: 12px; } .header { padding: 12px 16px; } .header-user-name { display: none; }
             .balance-amount { font-size: 2.2em; } .action-btn { padding: 18px 12px; font-size: 0.95em; } .action-btn .icon { font-size: 1.7em; }
             .summary-grid { gap: 8px; } .summary-card { padding: 14px 10px; } .summary-value { font-size: 1.5em; }
-            .profile-settings .avatar.avatar-xl { width: 100px; height: 100px; font-size: 2.2em; }
-            .profile-settings { padding: 20px 16px; }
         }
         @media (prefers-color-scheme: dark) {
             :root { --bg: #1A1A2E; --card: #252540; --text: #E8E8F0; --text-light: #999; --border: #333355; --shadow: 0 2px 12px rgba(0,0,0,0.2); }
             .form-group input { background: #2A2A45; } .form-group input:focus { background: #303050; }
-            .member-card { background: #2A2A45; }
+            .member-card { background: #2A2A45; } .member-card:hover { background: #303050; }
         }
         .hidden { display: none !important; }
     </style>
@@ -212,26 +245,31 @@
                     <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
                 </div>
             </div>
-            <div class="card profile-settings">
-                <div class="avatar-container">
-                    <div id="memberBigAvatar" class="avatar avatar-xl avatar-purple">
-                        <span class="initials"></span>
-                        <div class="camera-badge" onclick="document.getElementById('avatarInput').click()">
+            <div class="card" style="text-align:center;padding:20px 16px;">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar-container">
+                        <div id="memberBigAvatar" class="avatar avatar-xl avatar-purple">
+                            <span class="initials"></span>
+                        </div>
+                        <div class="edit-avatar-overlay" onclick="document.getElementById('avatarInput').click()">
                             <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zm9-7.2h-2.6L16.5 5H7.5L5.6 8H3c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2z"/></svg>
+                            <span>ערוך</span>
+                        </div>
+                        <div class="camera-badge" onclick="document.getElementById('avatarInput').click()">
+                            <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
                         </div>
                     </div>
-                    <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">
+                    <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" style="display:none">
                 </div>
-                <button class="change-photo-btn" onclick="document.getElementById('avatarInput').click()">📷 שנה תמונת פרופיל</button>
             </div>
             <div class="balance-card" id="memberBalanceCard">
                 <div class="balance-label">האלאנס שלך מול הקופה</div>
                 <div class="balance-amount" id="memberBalance">₪0</div>
-                <div class="balance-sub"><span>נתת <strong id="memberGiven">₪0</strong></span><span>קיבלת <strong id="memberReceived">₪0</strong></span></div>
+                <div class="balance-sub"><span>זכות <strong id="memberCredit">₪0</strong></span><span>חובה <strong id="memberDebit">₪0</strong></span></div>
             </div>
             <div class="action-grid">
-                <button class="action-btn give" onclick="openModal('give')"><span class="icon">💸</span>נתתי לקופה</button>
-                <button class="action-btn receive" onclick="openModal('receive')"><span class="icon">💰</span>קיבלתי מהקופה</button>
+                <button class="action-btn credit" onclick="openModal('receive')"><span class="icon">✅</span>הפקדה לקופה</button>
+                <button class="action-btn debit" onclick="openModal('give')"><span class="icon">📤</span>משיכה מהקופה</button>
             </div>
             <div class="card"><div class="card-title">📋 היסטוריית תנועות</div><ul id="memberTxnList" class="txn-list"></ul></div>
         </div>
@@ -255,14 +293,6 @@
             <div id="tab-add" class="hidden">
                 <div class="card">
                     <div class="card-title">➕ הוסף בן משפחה</div>
-                    <div class="avatar-upload">
-                        <div id="newUserAvatar" class="avatar avatar-lg avatar-purple" onclick="document.getElementById('newUserAvatarInput').click()">
-                            <span class="initials">?</span>
-                            <div class="camera-badge" style="width:28px;height:28px;"><svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zm9-7.2h-2.6L16.5 5H7.5L5.6 8H3c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2z"/></svg></div>
-                        </div>
-                        <input type="file" id="newUserAvatarInput" accept="image/*" onchange="previewNewUserAvatar(event)">
-                        <span class="upload-hint">הוסף תמונת פרופיל (אופציונלי)</span>
-                    </div>
                     <div class="form-group"><label>שם מלא</label><input type="text" id="newDisplayName" placeholder="שם מלא"></div>
                     <div class="form-group"><label>שם משתמש</label><input type="text" id="newUsername" placeholder="שם משתמש"></div>
                     <div class="form-group"><label>סיסמה</label><input type="password" id="newPassword" placeholder="סיסמה"></div>
@@ -272,23 +302,109 @@
         </div>
     </div>
 
-    <!-- MODAL -->
+    <!-- TRANSACTION MODAL -->
     <div id="txnModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
         <div class="modal">
             <div class="modal-handle"></div>
             <div class="modal-title" id="modalTitle">תנועה חדשה</div>
             <div class="form-group"><label>סכום (₪)</label><input type="number" id="txnAmount" placeholder="0" min="0.01" step="0.01" inputmode="decimal"></div>
             <div class="form-group"><label>תיאור (אופציונלי)</label><input type="text" id="txnDescription" placeholder="למה זה?"></div>
+            <div class="receipt-upload-area" id="receiptUploadArea" onclick="document.getElementById('txnReceiptInput').click()">
+                <div class="receipt-upload-hint" id="receiptHint"><span class="icon">📷</span>הוסף צילום קבלה/צ'ק (אופציונלי)</div>
+                <img id="receiptPreview" class="receipt-preview" style="display:none">
+            </div>
+            <input type="file" id="txnReceiptInput" accept="image/*,.pdf" style="display:none" onchange="previewReceipt(event)">
             <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">ביטול</button><button class="btn btn-primary" id="modalSubmit" onclick="submitTransaction()">אשר תנועה</button></div>
         </div>
     </div>
+
+    <!-- ADMIN TRANSACTION MODAL -->
+    <div id="adminTxnModal" class="modal-overlay" onclick="if(event.target===this)closeAdminModal()">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <div class="modal-title" id="adminModalTitle">תנועה חדשה</div>
+            <div class="form-group"><label>בן משפחה</label><select id="adminTxnMember"></select></div>
+            <div class="form-group"><label>סוג תנועה</label><select id="adminTxnType"><option value="receive">הפקדה (זכות)</option><option value="give">משיכה (חובה)</option></select></div>
+            <div class="form-group"><label>סכום (₪)</label><input type="number" id="adminTxnAmount" placeholder="0" min="0.01" step="0.01" inputmode="decimal"></div>
+            <div class="form-group"><label>תיאור (אופציונלי)</label><input type="text" id="adminTxnDescription" placeholder="למה זה?"></div>
+            <div class="receipt-upload-area" id="adminReceiptUploadArea" onclick="document.getElementById('adminTxnReceiptInput').click()">
+                <div class="receipt-upload-hint" id="adminReceiptHint"><span class="icon">📷</span>הוסף צילום קבלה/צ'ק (אופציונלי)</div>
+                <img id="adminReceiptPreview" class="receipt-preview" style="display:none">
+            </div>
+            <input type="file" id="adminTxnReceiptInput" accept="image/*,.pdf" style="display:none" onchange="previewAdminReceipt(event)">
+            <div class="modal-actions"><button class="btn btn-outline" onclick="closeAdminModal()">ביטול</button><button class="btn btn-primary" onclick="submitAdminTransaction()">אשר תנועה</button></div>
+        </div>
+    </div>
+
+    <!-- IMAGE VIEWER -->
+    <div id="imageViewer" class="image-viewer" onclick="closeImageViewer()">
+        <button class="image-viewer-close">✕</button>
+        <img id="imageViewerImg" src="">
+    </div>
+
+    <!-- TOAST -->
     <div id="toast" class="toast"></div>
+
+    <!-- SOUND TOGGLE -->
+    <div class="sound-toggle">
+        <button id="soundToggle" onclick="toggleSound()" title="הפעל/כבה צלילים">🔊</button>
+    </div>
 
 <script>
 const API = '';
-let currentUser = null, currentToken = localStorage.getItem('token'), txnType = 'give';
+let currentUser = null, currentToken = localStorage.getItem('token'), txnType = 'receive';
+let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+let adminTxnMemberId = null;
+let pendingReceiptFile = null;
+let pendingAdminReceiptFile = null;
 const AVATAR_COLORS = ['avatar-blue','avatar-purple','avatar-pink','avatar-green','avatar-orange','avatar-red','avatar-teal','avatar-indigo'];
 
+// ===== SOUND =====
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playCashSound() {
+    if (!soundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    // Coin drop sound
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1200, now);
+    osc1.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+    gain1.gain.setValueAtTime(0.3, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc1.connect(gain1).connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.15);
+    // Second coin
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1800, now + 0.08);
+    osc2.frequency.exponentialRampToValueAtTime(900, now + 0.18);
+    gain2.gain.setValueAtTime(0.25, now + 0.08);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.23);
+    osc2.connect(gain2).connect(audioCtx.destination);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.23);
+    // Register beep
+    const osc3 = audioCtx.createOscillator();
+    const gain3 = audioCtx.createGain();
+    osc3.type = 'square';
+    osc3.frequency.setValueAtTime(800, now + 0.2);
+    gain3.gain.setValueAtTime(0.15, now + 0.2);
+    gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+    osc3.connect(gain3).connect(audioCtx.destination);
+    osc3.start(now + 0.2);
+    osc3.stop(now + 0.35);
+}
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('soundEnabled', soundEnabled);
+    document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+// ===== HELPERS =====
 function showToast(msg, type='') { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type+' show'; setTimeout(()=>t.className='toast',3000); }
 function formatMoney(n) { return '₪'+Math.abs(n).toLocaleString('he-IL',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function formatDate(d) { return new Date(d).toLocaleDateString('he-IL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
@@ -315,13 +431,13 @@ async function api(method, path, body=null, isForm=false) {
     return data;
 }
 
+// ===== AUTH =====
 async function login() {
     const u=document.getElementById('usernameInput').value.trim(), p=document.getElementById('passwordInput').value;
     if(!u||!p){document.getElementById('loginError').textContent='מלא את כל השדות';return;}
     try { const d=await api('POST','/api/login',{username:u,password:p}); currentToken=d.token; currentUser=d.user; localStorage.setItem('token',currentToken); document.getElementById('loginPage').classList.add('hidden'); if(currentUser.role==='admin')showAdminApp(); else showMemberApp(); } catch(e){document.getElementById('loginError').textContent=e.message;}
 }
 document.getElementById('passwordInput').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-
 function logout() { currentToken=null; currentUser=null; localStorage.removeItem('token'); document.getElementById('memberApp').classList.add('hidden'); document.getElementById('adminApp').classList.add('hidden'); document.getElementById('loginPage').classList.remove('hidden'); document.getElementById('usernameInput').value=''; document.getElementById('passwordInput').value=''; document.getElementById('loginError').textContent=''; }
 
 // ===== MEMBER =====
@@ -339,11 +455,17 @@ async function loadMemberData() {
         const bal=balance.balance;
         document.getElementById('memberBalanceCard').className='balance-card '+(bal>0?'negative':bal<0?'positive':'');
         document.getElementById('memberBalance').textContent=(bal>0?'-':bal<0?'+':'')+formatMoney(bal);
-        document.getElementById('memberGiven').textContent=formatMoney(balance.given);
-        document.getElementById('memberReceived').textContent=formatMoney(balance.received);
+        document.getElementById('memberCredit').textContent=formatMoney(balance.given);
+        document.getElementById('memberDebit').textContent=formatMoney(balance.received);
         const list=document.getElementById('memberTxnList');
         if(!txns.length){list.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>אין תנועות עדיין</p></div>';}
-        else{list.innerHTML=txns.map(t=>'<li class="txn-item"><div class="txn-icon '+t.type+'">'+(t.type==='give'?'💸':'💰')+'</div><div class="txn-details"><div class="txn-desc">'+(t.description||(t.type==='give'?'העברה לקופה':'קבלה מהקופה'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div><div class="txn-amount '+t.type+'">'+(t.type==='give'?'+':'−')+formatMoney(t.amount)+'</div></li>').join('');}
+        else{list.innerHTML=txns.map(t=>{
+            const isCredit = t.type==='receive';
+            const receiptHtml = t.receipt_url 
+                ? '<div class="txn-receipt" onclick="openImageViewer(\''+t.receipt_url+'\')"><img src="'+t.receipt_url+'" alt="קבלה"></div>'
+                : '<div class="txn-receipt-placeholder" onclick="uploadReceipt('+t.id+')">📷</div>';
+            return '<li class="txn-item"><div class="txn-icon '+t.type+'">'+(isCredit?'✅':'📤')+'</div><div class="txn-details"><div class="txn-desc">'+(t.description||(isCredit?'הפקדה לקופה':'משיכה מהקופה'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isCredit?'+':'−')+formatMoney(t.amount)+'</div></li>';
+        }).join('');}
     } catch(e){if(e.message.includes('auth')||e.message.includes('token'))logout();}
 }
 
@@ -360,6 +482,24 @@ async function uploadAvatar(event) {
     } catch(e){showToast(e.message,'error');}
 }
 
+function uploadReceipt(txnId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,.pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const fd = new FormData();
+            fd.append('receipt', file);
+            await api('POST', '/api/transaction/' + txnId + '/receipt', fd, true);
+            showToast('הקבלה הועלתה!','success');
+            loadMemberData();
+        } catch(err) { showToast(err.message, 'error'); }
+    };
+    input.click();
+}
+
 // ===== ADMIN =====
 async function showAdminApp() { document.getElementById('adminApp').classList.remove('hidden'); await loadAdminData(); }
 
@@ -371,67 +511,145 @@ async function loadAdminData() {
         if(!dash.members.length){mL.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>אין בני משפחה</p></div>';}
         else{mL.innerHTML=dash.members.map(m=>{
             const b=m.balance; const c=b>0?'owes':b<0?'owed':'zero'; const t=b>0?'חייב '+formatMoney(b):b<0?'זכאי '+formatMoney(b):'מאוזן';
-            return '<div class="member-card"><div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div><div class="member-info"><div class="member-name">'+m.display_name+'</div><div class="member-stats">נתן: '+formatMoney(m.total_given)+' · קיבל: '+formatMoney(m.total_received)+'</div></div><div class="member-balance '+c+'">'+t+'</div></div>';
+            return '<div class="member-card" onclick="openAdminTxnModal('+m.id+',\''+m.display_name.replace(/'/g,"\\'")+'\')">'+
+                '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
+                '<div class="member-info"><div class="member-name">'+m.display_name+'</div><div class="member-stats">זכות: '+formatMoney(m.total_given)+' · חובה: '+formatMoney(m.total_received)+'</div></div>'+
+                '<div class="member-actions"><button class="btn btn-sm btn-success" onclick="event.stopPropagation();openAdminTxnModal('+m.id+',\''+m.display_name.replace(/'/g,"\\'")+'\')">💰</button></div>'+
+                '<div class="member-balance '+c+'">'+t+'</div></div>';
         }).join('');}
         const tL=document.getElementById('adminTxnList');
         if(!txns.length){tL.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>אין תנועות</p></div>';}
-        else{tL.innerHTML=txns.map(t=>'<li class="txn-item"><div class="avatar avatar-xs '+avatarColor(t.user_id)+'"><span class="initials">'+getInitials(t.display_name)+'</span></div><div class="txn-details"><div class="txn-desc"><strong>'+t.display_name+'</strong> — '+(t.description||(t.type==='give'?'העברה לקופה':'קבלה מהקופה'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div><div class="txn-amount '+t.type+'">'+(t.type==='give'?'+':'−')+formatMoney(t.amount)+'</div></li>').join('');}
+        else{tL.innerHTML=txns.map(t=>{
+            const isCredit = t.type==='receive';
+            const receiptHtml = t.receipt_url 
+                ? '<div class="txn-receipt" onclick="openImageViewer(\''+t.receipt_url+'\')"><img src="'+t.receipt_url+'" alt="קבלה"></div>'
+                : '';
+            return '<li class="txn-item"><div class="avatar avatar-xs '+avatarColor(t.user_id)+'"><span class="initials">'+getInitials(t.display_name)+'</span></div><div class="txn-details"><div class="txn-desc"><strong>'+t.display_name+'</strong> — '+(t.description||(isCredit?'הפקדה לקופה':'משיכה מהקופה'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isCredit?'+':'−')+formatMoney(t.amount)+'</div></li>';
+        }).join('');}
     } catch(e){if(e.message.includes('auth')||e.message.includes('token'))logout();}
 }
 
 function switchTab(tab,el) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('tab-members').classList.toggle('hidden',tab!=='members'); document.getElementById('tab-transactions').classList.toggle('hidden',tab!=='transactions'); document.getElementById('tab-add').classList.toggle('hidden',tab!=='add'); }
-
-function previewNewUserAvatar(event) {
-    const file=event.target.files[0]; if(!file) return;
-    const reader=new FileReader(); reader.onload=e=>{
-        const el=document.getElementById('newUserAvatar');
-        el.className='avatar avatar-lg'; el.innerHTML='<img src="'+e.target.result+'">';
-    }; reader.readAsDataURL(file);
-}
 
 async function addUser() {
     const dn=document.getElementById('newDisplayName').value.trim(), u=document.getElementById('newUsername').value.trim(), p=document.getElementById('newPassword').value;
     if(!dn||!u||!p){showToast('מלא את כל השדות','error');return;}
     try {
         const d=await api('POST','/api/admin/user',{username:u,password:p,display_name:dn});
-        // Upload avatar if selected
-        const avatarFile=document.getElementById('newUserAvatarInput').files[0];
-        if(avatarFile && d.user) {
-            const fd=new FormData(); fd.append('avatar',avatarFile);
-            await api('POST','/api/admin/avatar/'+d.user.id,fd,true);
-        }
         showToast('בן המשפחה נוסף!','success');
         document.getElementById('newDisplayName').value=''; document.getElementById('newUsername').value=''; document.getElementById('newPassword').value='';
-        document.getElementById('newUserAvatarInput').value='';
-        document.getElementById('newUserAvatar').className='avatar avatar-lg avatar-purple';
-        document.getElementById('newUserAvatar').innerHTML='<span class="initials">?</span>';
         loadAdminData();
     } catch(e){showToast(e.message,'error');}
 }
 
-// ===== MODAL =====
+// ===== ADMIN TRANSACTION MODAL =====
+async function openAdminTxnModal(memberId, memberName) {
+    adminTxnMemberId = memberId;
+    document.getElementById('adminModalTitle').textContent = '💰 תנועה עבור ' + memberName;
+    document.getElementById('adminTxnAmount').value = '';
+    document.getElementById('adminTxnDescription').value = '';
+    document.getElementById('adminTxnType').value = 'receive';
+    pendingAdminReceiptFile = null;
+    document.getElementById('adminReceiptPreview').style.display = 'none';
+    document.getElementById('adminReceiptHint').style.display = 'block';
+    document.getElementById('adminTxnModal').classList.add('active');
+    setTimeout(()=>document.getElementById('adminTxnAmount').focus(),150);
+}
+
+function closeAdminModal() { document.getElementById('adminTxnModal').classList.remove('active'); adminTxnMemberId = null; }
+function previewAdminReceipt(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    pendingAdminReceiptFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('adminReceiptPreview').src = e.target.result;
+        document.getElementById('adminReceiptPreview').style.display = 'block';
+        document.getElementById('adminReceiptHint').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function submitAdminTransaction() {
+    const type = document.getElementById('adminTxnType').value;
+    const amount = parseFloat(document.getElementById('adminTxnAmount').value);
+    const desc = document.getElementById('adminTxnDescription').value.trim();
+    if(!amount||amount<=0){showToast('הכנס סכום תקיף','error');return;}
+    try {
+        const result = await api('POST','/api/admin/transaction/'+adminTxnMemberId,{type,amount,description:desc});
+        // Upload receipt if selected
+        if (pendingAdminReceiptFile) {
+            const fd = new FormData();
+            fd.append('receipt', pendingAdminReceiptFile);
+            await api('POST', '/api/transaction/' + result.transaction.id + '/receipt', fd, true);
+        }
+        closeAdminModal();
+        playCashSound();
+        showToast('התנועה נשמרה!','success');
+        loadAdminData();
+    } catch(e){showToast(e.message,'error');}
+}
+
+// ===== MEMBER TRANSACTION MODAL =====
 function openModal(type) {
-    txnType=type; const g=type==='give';
-    document.getElementById('modalTitle').textContent=g?'💸 נתתי לקופה':'💰 קיבלתי מהקופה';
-    const s=document.getElementById('modalSubmit'); s.className='btn '+(g?'btn-success':'btn-warning'); s.textContent=g?'אשר העברה':'אשר קבלה';
+    txnType=type;
+    const isCredit = type==='receive';
+    document.getElementById('modalTitle').textContent=isCredit?'✅ הפקדה לקופה':'📤 משיכה מהקופה';
+    const s=document.getElementById('modalSubmit'); s.className='btn '+(isCredit?'btn-success':'btn-danger'); s.textContent=isCredit?'אשר הפקדה':'אשר משיכה';
     document.getElementById('txnAmount').value=''; document.getElementById('txnDescription').value='';
+    pendingReceiptFile = null;
+    document.getElementById('receiptPreview').style.display='none';
+    document.getElementById('receiptHint').style.display='block';
     document.getElementById('txnModal').classList.add('active');
     setTimeout(()=>document.getElementById('txnAmount').focus(),150);
 }
 function closeModal() { document.getElementById('txnModal').classList.remove('active'); }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAdminModal();}});
+function previewReceipt(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    pendingReceiptFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('receiptPreview').src = e.target.result;
+        document.getElementById('receiptPreview').style.display = 'block';
+        document.getElementById('receiptHint').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
 
 async function submitTransaction() {
     const a=parseFloat(document.getElementById('txnAmount').value), d=document.getElementById('txnDescription').value.trim();
     if(!a||a<=0){showToast('הכנס סכום תקיף','error');return;}
-    try { await api('POST','/api/member/transaction',{type:txnType,amount:a,description:d}); closeModal(); showToast('התנועה נשמרה!','success'); loadMemberData(); } catch(e){showToast(e.message,'error');}
+    try {
+        const result = await api('POST','/api/member/transaction',{type:txnType,amount:a,description:d});
+        // Upload receipt if selected
+        if (pendingReceiptFile) {
+            const fd = new FormData();
+            fd.append('receipt', pendingReceiptFile);
+            await api('POST', '/api/transaction/' + result.transaction.id + '/receipt', fd, true);
+        }
+        closeModal();
+        playCashSound();
+        showToast('התנועה נשמרה!','success');
+        loadMemberData();
+    } catch(e){showToast(e.message,'error');}
 }
+
+// ===== IMAGE VIEWER =====
+function openImageViewer(url) {
+    document.getElementById('imageViewerImg').src = url;
+    document.getElementById('imageViewer').classList.add('active');
+}
+function closeImageViewer() { document.getElementById('imageViewer').classList.remove('active'); }
 
 // ===== INIT =====
 async function init() {
     if(currentToken) {
         try { const me=await api('GET','/api/me'); currentUser=me.user; document.getElementById('loginPage').classList.add('hidden'); if(currentUser.role==='admin')showAdminApp(); else showMemberApp(); } catch(e){logout();}
     }
+    // Update sound toggle
+    document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
 }
 init();
 </script>

@@ -187,6 +187,40 @@ app.post('/api/admin/transaction/:userId', requireAuth, requireAdmin, async (req
     }
 });
 
+// Upload receipt for a transaction
+const receiptUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const dir = path.join(__dirname, 'public', 'receipts');
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            cb(null, `receipt_${req.params.txnId}_${Date.now()}${ext}`);
+        }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        if (allowed.includes(file.mimetype)) cb(null, true);
+        else cb(new Error('סוג קובץ לא נתמך'));
+    }
+});
+
+app.post('/api/transaction/:txnId/receipt', requireAuth, receiptUpload.single('receipt'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'לא הועלה קובץ' });
+        const txnId = parseInt(req.params.txnId);
+        const receiptUrl = '/receipts/' + req.file.filename;
+        await db.run('UPDATE transactions SET receipt_url = ? WHERE id = ? AND user_id = ?', [receiptUrl, txnId, req.user.id]);
+        res.json({ success: true, receipt_url: receiptUrl });
+    } catch (err) {
+        console.error('Receipt upload error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
 // ---- ADMIN ROUTES ----
 
 app.get('/api/admin/dashboard', requireAuth, requireAdmin, async (req, res) => {

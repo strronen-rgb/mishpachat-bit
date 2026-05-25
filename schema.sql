@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     type TEXT NOT NULL CHECK(type IN ('give', 'receive')),
     amount REAL NOT NULL CHECK(amount > 0),
     description TEXT DEFAULT '',
+    receipt_url TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
