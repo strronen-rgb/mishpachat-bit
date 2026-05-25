@@ -27,20 +27,27 @@ async function all(sql, params = []) {
 
 // Initialize schema
 async function initDb() {
-    const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-    // Split on semicolons but skip empty statements
-    const statements = schema.split(';').map(s => s.trim()).filter(s => s.length > 10);
-    for (const stmt of statements) {
-        try {
-            await pool.query(stmt);
-        } catch (err) {
-            // Skip "already exists" errors
-            if (!err.message.includes('already exists')) {
-                console.warn('Schema init warning:', err.message);
+    try {
+        // Test connection first
+        const testResult = await pool.query('SELECT NOW() as now');
+        console.log('✅ PostgreSQL connected:', testResult.rows[0].now);
+
+        const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+        const statements = schema.split(';').map(s => s.trim()).filter(s => s.length > 10);
+        for (const stmt of statements) {
+            try {
+                await pool.query(stmt);
+            } catch (err) {
+                if (!err.message.includes('already exists')) {
+                    console.warn('Schema init warning:', err.message);
+                }
             }
         }
+        console.log('✅ Database initialized (PostgreSQL/Neon)');
+    } catch (err) {
+        console.error('❌ DB connection failed:', err.message);
+        throw err;
     }
-    console.log('✅ Database initialized (PostgreSQL/Neon)');
 }
 
 // ---- USER FUNCTIONS ----
@@ -144,7 +151,7 @@ async function getUserTransactions(limit = 50) {
 
 async function getMyTransactions(userId, limit = 50) {
     return await all(
-        'SELECT * FROM transactions WHERE user_id = $1 ORDER BY t.created_at DESC LIMIT $2',
+        'SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
         [userId, limit]
     );
 }
