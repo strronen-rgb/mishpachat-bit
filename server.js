@@ -139,6 +139,17 @@ app.post('/api/admin/avatar/:userId', requireAuth, requireAdmin, upload.single('
 
 // ---- MEMBER ROUTES ----
 
+app.get('/api/family/debt/:id', requireAuth, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const debtData = await db.getFamilyDebt(userId);
+        res.json({ userId, debt: debtData });
+    } catch (err) {
+        console.error('Debt calculation error:', err);
+        res.status(500).json({ error: 'שגיאת חישוב חובות' });
+    }
+});
+
 app.get('/api/member/balance', requireAuth, async (req, res) => {
     try {
         const balance = await db.getFullBalance(req.user.id);
