@@ -110,7 +110,7 @@ app.post('/api/avatar', requireAuth, upload.single('avatar'), async (req, res) =
             if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
         const avatarUrl = '/avatars/' + req.file.filename;
-        await db.run('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, req.user.id]);
+        await db.run('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, req.user.id]);
         res.json({ success: true, avatar_url: avatarUrl });
     } catch (err) {
         console.error('Avatar upload error:', err);
@@ -129,7 +129,7 @@ app.post('/api/admin/avatar/:userId', requireAuth, requireAdmin, upload.single('
             if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
         const avatarUrl = '/avatars/' + req.file.filename;
-        await db.run('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, userId]);
+        await db.run('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, userId]);
         res.json({ success: true, avatar_url: avatarUrl });
     } catch (err) {
         console.error('Admin avatar upload error:', err);
@@ -217,7 +217,7 @@ app.post('/api/transaction/:txnId/receipt', requireAuth, receiptUpload.single('r
         if (!req.file) return res.status(400).json({ error: 'לא הועלה קובץ' });
         const txnId = parseInt(req.params.txnId);
         const receiptUrl = '/receipts/' + req.file.filename;
-        await db.run('UPDATE transactions SET receipt_url = ? WHERE id = ? AND user_id = ?', [receiptUrl, txnId, req.user.id]);
+        await db.run('UPDATE transactions SET receipt_url = $1 WHERE id = $2 AND user_id = $3', [receiptUrl, txnId, req.user.id]);
         res.json({ success: true, receipt_url: receiptUrl });
     } catch (err) {
         console.error('Receipt upload error:', err);
@@ -279,9 +279,9 @@ app.put('/api/admin/user/:id', requireAuth, requireAdmin, async (req, res) => {
         if (password) {
             const bcrypt = require('bcryptjs');
             const hash = bcrypt.hashSync(password, 10);
-            await db.run('UPDATE users SET username = ?, display_name = ?, password_hash = ? WHERE id = ?', [username, display_name, hash, parseInt(req.params.id)]);
+            await db.run('UPDATE users SET username = $1, display_name = $2, password_hash = $3 WHERE id = $4', [username, display_name, hash, parseInt(req.params.id)]);
         } else {
-            await db.run('UPDATE users SET username = ?, display_name = ? WHERE id = ?', [username, display_name, parseInt(req.params.id)]);
+            await db.run('UPDATE users SET username = $1, display_name = $2 WHERE id = $3', [username, display_name, parseInt(req.params.id)]);
         }
         res.json({ success: true });
     } catch (err) {
@@ -300,7 +300,7 @@ app.delete('/api/admin/user/:id', requireAuth, requireAdmin, async (req, res) =>
             const avatarPath = path.join(__dirname, 'public', user.avatar_url);
             if (fs.existsSync(avatarPath)) fs.unlinkSync(avatarPath);
         }
-        await db.run('DELETE FROM users WHERE id = ?', [parseInt(req.params.id)]);
+        await db.run('DELETE FROM users WHERE id = $1', [parseInt(req.params.id)]);
         res.json({ success: true });
     } catch (err) {
         console.error('Delete user error:', err);
