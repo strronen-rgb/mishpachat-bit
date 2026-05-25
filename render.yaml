@@ -9,7 +9,5 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-    disk:
-      name: mishpachat-data
-      mountPath: /opt/render/project/src
-      sizeGB: 1
+      - key: DATABASE_URL
+        value: "postgresql://neondb_owner:npg_lzWeA5f4RIUJ@ep-young-darkness-alnbgfe7.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require"
