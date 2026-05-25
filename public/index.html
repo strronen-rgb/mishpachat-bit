@@ -571,7 +571,7 @@ async function loadUserManageList() {
                 '</div>'+
                 '<div class="user-manage-info">'+
                     '<div class="user-manage-name">'+m.display_name+'</div>'+
-                    '<div class="user-manage-stats">@'+m.username+' · יתרה: <span class="'+(m.balance>0?'user-balance-neg':'m.balance<0?'user-balance-pos':'user-balance-zero')+'">'+(m.balance>0?'חייב ₪'+m.balance.toLocaleString():m.balance<0?'זכאי ₪'+Math.abs(m.balance).toLocaleString():'מאוזן')+'</span></div>'+
+                    (()=>{const cls=m.balance>0?'user-balance-neg':m.balance<0?'user-balance-pos':'user-balance-zero';const txt=m.balance>0?'חייב ₪'+m.balance.toLocaleString():m.balance<0?'זכאי ₪'+Math.abs(m.balance).toLocaleString():'מאוזן';return '<div class="user-manage-stats">@'+m.username+' · יתרה: <span class="'+cls+'">'+txt+'</span></div>'})()+
                 '</div>'+
                 '<div class="user-manage-actions">'+
                     '<button class="btn btn-sm btn-ghost" onclick="editUser('+m.id+',\''+m.display_name.replace(/'/g,"\\'")+'\',\''+m.username+'\')">✏️</button>'+
