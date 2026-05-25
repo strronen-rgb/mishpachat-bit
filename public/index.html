@@ -91,6 +91,8 @@
         .btn-warning { background: linear-gradient(135deg, var(--warning), var(--warning-dark)); color: white; }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: 100%; }
         .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-outline-light { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: white; }
+        .btn-outline-light:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
         .btn-ghost { background: rgba(108,99,255,0.08); color: var(--primary); }
         .btn-ghost:hover { background: rgba(108,99,255,0.15); }
         .btn-sm { padding: 10px 18px; font-size: 0.88em; }
@@ -156,7 +158,19 @@
         .member-name { font-weight: 600; font-size: 0.95em; }
         .member-stats { color: var(--text-light); font-size: 0.8em; margin-top: 2px; }
         .member-balance { font-weight: 800; font-size: 1.15em; direction: ltr; white-space: nowrap; flex-shrink: 0; }
-        .member-balance.owes { color: var(--danger); } .member-balance.owed { color: var(--success); } .member-balance.zero { color: var(--text-light); }
+        .user-manage-card { display: flex; align-items: center; padding: 14px 16px; background: #F8F9FA; border-radius: var(--radius-sm); margin-bottom: 10px; gap: 12px; }
+        .user-manage-avatar { flex-shrink: 0; }
+        .user-manage-info { flex: 1; min-width: 0; }
+        .user-manage-name { font-weight: 600; font-size: 0.95em; }
+        .user-manage-stats { color: var(--text-light); font-size: 0.8em; margin-top: 2px; }
+        .user-manage-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .user-balance-neg { color: var(--danger); font-weight: 700; }
+        .user-balance-pos { color: var(--success); font-weight: 700; }
+        .user-balance-zero { color: var(--text-light); }
+        .user-edit-form { width: 100%; padding: 8px 0; }
+        .user-edit-form .form-group { margin-bottom: 10px; }
+        .user-edit-form .form-group label { font-size: 0.82em; margin-bottom: 4px; }
+        .user-edit-form .form-group input { padding: 10px 14px; font-size: 0.9em; }
         .member-actions { display: flex; gap: 6px; margin-right: 8px; }
 
         /* ===== TABS ===== */
@@ -263,7 +277,7 @@
                 </div>
             </div>
             <div class="balance-card" id="memberBalanceCard">
-                <div class="balance-label">האלאנס שלך מול הקופה</div>
+                <div class="balance-label">היתרה שלך מול הקופה</div>
                 <div class="balance-amount" id="memberBalance">₪0</div>
                 <div class="balance-sub"><span>זכות <strong id="memberCredit">₪0</strong></span><span>חובה <strong id="memberDebit">₪0</strong></span></div>
             </div>
@@ -285,20 +299,24 @@
             <div class="summary-grid" id="adminSummary"></div>
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('members',this)">👥 בני משפחה</button>
+                <button class="tab" onclick="switchTab('manage',this)">⚙️ ניהול</button>
                 <button class="tab" onclick="switchTab('transactions',this)">📋 תנועות</button>
-                <button class="tab" onclick="switchTab('add',this)">➕ הוסף</button>
             </div>
             <div id="tab-members"><div id="adminMemberList"></div></div>
-            <div id="tab-transactions" class="hidden"><div class="card"><div class="card-title">📋 כל התנועות</div><ul id="adminTxnList" class="txn-list"></ul></div></div>
-            <div id="tab-add" class="hidden">
+            <div id="tab-manage" class="hidden">
                 <div class="card">
-                    <div class="card-title">➕ הוסף בן משפחה</div>
+                    <div class="card-title">⚙️ ניהול משתמשים</div>
+                    <div id="userManageList"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">➕ הוסף בן משפחה חדש</div>
                     <div class="form-group"><label>שם מלא</label><input type="text" id="newDisplayName" placeholder="שם מלא"></div>
                     <div class="form-group"><label>שם משתמש</label><input type="text" id="newUsername" placeholder="שם משתמש"></div>
                     <div class="form-group"><label>סיסמה</label><input type="password" id="newPassword" placeholder="סיסמה"></div>
                     <button class="btn btn-primary" onclick="addUser()">הוסף בן משפחה</button>
                 </div>
             </div>
+            <div id="tab-transactions" class="hidden"><div class="card"><div class="card-title">📋 כל התנועות</div><ul id="adminTxnList" class="txn-list"></ul></div></div>
         </div>
     </div>
 
@@ -529,7 +547,83 @@ async function loadAdminData() {
     } catch(e){if(e.message.includes('auth')||e.message.includes('token'))logout();}
 }
 
-function switchTab(tab,el) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('tab-members').classList.toggle('hidden',tab!=='members'); document.getElementById('tab-transactions').classList.toggle('hidden',tab!=='transactions'); document.getElementById('tab-add').classList.toggle('hidden',tab!=='add'); }
+function switchTab(tab,el) {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+    document.getElementById('tab-members').classList.toggle('hidden',tab!=='members');
+    document.getElementById('tab-manage').classList.toggle('hidden',tab!=='manage');
+    document.getElementById('tab-transactions').classList.toggle('hidden',tab!=='transactions');
+    if(tab==='manage') loadUserManageList();
+}
+
+// ===== USER MANAGEMENT =====
+let editingUserId = null;
+
+async function loadUserManageList() {
+    try {
+        const dash = await api('GET','/api/admin/dashboard');
+        const allUsers = dash.members;
+        const list = document.getElementById('userManageList');
+        if(!allUsers.length){list.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>אין בני משפחה</p></div>'; return;}
+        list.innerHTML = allUsers.map(m=>{
+            return '<div class="user-manage-card" id="userCard-'+m.id+'">'+
+                '<div class="user-manage-avatar">'+
+                    '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
+                '</div>'+
+                '<div class="user-manage-info">'+
+                    '<div class="user-manage-name">'+m.display_name+'</div>'+
+                    '<div class="user-manage-stats">@'+m.username+' · יתרה: <span class="'+(m.balance>0?'user-balance-neg':'m.balance<0?'user-balance-pos':'user-balance-zero')+'">'+(m.balance>0?'חייב ₪'+m.balance.toLocaleString():m.balance<0?'זכאי ₪'+Math.abs(m.balance).toLocaleString():'מאוזן')+'</span></div>'+
+                '</div>'+
+                '<div class="user-manage-actions">'+
+                    '<button class="btn btn-sm btn-ghost" onclick="editUser('+m.id+',\''+m.display_name.replace(/'/g,"\\'")+'\',\''+m.username+'\')">✏️</button>'+
+                    '<button class="btn btn-sm btn-danger" onclick="deleteUser('+m.id+',\''+m.display_name.replace(/'/g,"\\'")+'\')">🗑️</button>'+
+                '</div>'+
+            '</div>';
+        }).join('');
+    } catch(e){showToast(e.message,'error');}
+}
+
+function editUser(id, displayName, username) {
+    editingUserId = id;
+    const card = document.getElementById('userCard-'+id);
+    card.innerHTML = '<div class="user-edit-form">'+
+        '<div class="form-group"><label>שם מלא</label><input type="text" id="editDisplayName-'+id+'" value="'+displayName+'"></div>'+
+        '<div class="form-group"><label>שם משתמש</label><input type="text" id="editUsername-'+id+'" value="'+username+'"></div>'+
+        '<div class="form-group"><label>סיסמה חדשה (השאר ריק ללא שינוי)</label><input type="password" id="editPassword-'+id+'" placeholder="סיסמה חדשה"></div>'+
+        '<div style="display:flex;gap:8px;margin-top:8px;">'+
+            '<button class="btn btn-sm btn-primary" onclick="saveUser('+id+')">💾 שמור</button>'+
+            '<button class="btn btn-sm btn-outline" onclick="cancelEdit('+id+',\''+displayName.replace(/'/g,"\\'")+'\',\''+username+'\')">✕ ביטול</button>'+
+        '</div>'+
+    '</div>';
+}
+
+function cancelEdit(id, displayName, username) {
+    editingUserId = null;
+    loadUserManageList();
+}
+
+async function saveUser(id) {
+    const dn = document.getElementById('editDisplayName-'+id).value.trim();
+    const u = document.getElementById('editUsername-'+id).value.trim();
+    const p = document.getElementById('editPassword-'+id).value;
+    if(!dn||!u){showToast('מלא את כל השדות','error');return;}
+    try {
+        await api('PUT','/api/admin/user/'+id,{username:u,display_name:dn,password:p||undefined});
+        editingUserId = null;
+        showToast('המשתמש עודכן!','success');
+        loadUserManageList();
+        loadAdminData();
+    } catch(e){showToast(e.message,'error');}
+}
+
+async function deleteUser(id, displayName) {
+    if(!confirm('האם אתה בטוח שברצונך למחוק את '+displayName+'?')) return;
+    try {
+        await api('DELETE','/api/admin/user/'+id);
+        showToast('המשתמש נמחק','success');
+        loadUserManageList();
+        loadAdminData();
+    } catch(e){showToast(e.message,'error');}
+}
 
 async function addUser() {
     const dn=document.getElementById('newDisplayName').value.trim(), u=document.getElementById('newUsername').value.trim(), p=document.getElementById('newPassword').value;

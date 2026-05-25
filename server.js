@@ -258,6 +258,28 @@ app.post('/api/admin/user', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
+app.put('/api/admin/user/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const user = await db.getUserById(parseInt(req.params.id));
+        if (!user) return res.status(404).json({ error: 'משתמש לא נמצא' });
+        if (user.role === 'admin') return res.status(400).json({ error: 'לא ניתן לערוך מנהל' });
+        const { username, display_name, password } = req.body;
+        if (!username || !display_name) return res.status(400).json({ error: 'חוסר נתונים' });
+        if (password) {
+            const bcrypt = require('bcryptjs');
+            const hash = bcrypt.hashSync(password, 10);
+            await db.run('UPDATE users SET username = ?, display_name = ?, password_hash = ? WHERE id = ?', [username, display_name, hash, parseInt(req.params.id)]);
+        } else {
+            await db.run('UPDATE users SET username = ?, display_name = ? WHERE id = ?', [username, display_name, parseInt(req.params.id)]);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update user error:', err);
+        if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'שם המשתמש כבר קיים' });
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
 app.delete('/api/admin/user/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const user = await db.getUserById(parseInt(req.params.id));
