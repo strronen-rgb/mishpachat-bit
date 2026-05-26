@@ -77,8 +77,8 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Action buttons pulse */
-        .action-btn.credit { animation: pulseGlow 2.5s ease-in-out infinite, fadeInUp 0.5s ease-out backwards; }
-        .action-btn.debit { animation: pulseGlowRed 2.5s ease-in-out infinite, fadeInUp 0.5s ease-out backwards; }
+        .action-btn.credit { animation: pulseGlowRed 2.5s ease-in-out infinite, fadeInUp 0.5s ease-out backwards; }
+        .action-btn.debit { animation: pulseGlow 2.5s ease-in-out infinite, fadeInUp 0.5s ease-out backwards; }
         @keyframes pulseGlow {
             0%, 100% { box-shadow: 0 4px 20px rgba(16,185,129,0.15); }
             50% { box-shadow: 0 8px 40px rgba(16,185,129,0.35); }
@@ -569,10 +569,10 @@
             .form-group input { background: rgba(0,0,0,0.03); } .form-group input:focus { background: white; }
             .member-card { background: rgba(0,0,0,0.02); } .member-card:hover { background: rgba(108,99,255,0.06); }
             .user-manage-card { background: rgba(0,0,0,0.02); }
-            .action-btn.credit { background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.05)); }
-            .action-btn.debit { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.05)); }
-            .txn-icon.credit { background: rgba(16,185,129,0.12); }
-            .txn-icon.debit { background: rgba(239,68,68,0.12); }
+            .action-btn.credit { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.05)); }
+            .action-btn.debit { background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.05)); }
+            .txn-icon.receive { background: rgba(239,68,68,0.12); }
+            .txn-icon.give { background: rgba(16,185,129,0.12); }
         }
         .hidden { display: none !important; }
 
@@ -665,7 +665,7 @@
                 {/* Quick stats */}
                 <div class="wallet-stats-quick">
                     <div class="wallet-stat-item">
-                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--success-light)"><path d="M5 19h14" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 5h14" stroke="currentColor" stroke-width="2" fill="none"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"/></svg>
+                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--danger-light)"><path d="M5 19h14" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 5h14" stroke="currentColor" stroke-width="2" fill="none"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"/></svg>
                         <div>
                             <div class="wallet-stat-value" id="memberCredit">₪0</div>
                             <div class="wallet-stat-label">הפקדות</div>
@@ -673,7 +673,7 @@
                     </div>
                     <div class="wallet-stat-divider"></div>
                     <div class="wallet-stat-item">
-                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--danger-light)"><path d="M12 2v20M17 12H7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--success-light)"><path d="M12 2v20M17 12H7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
                         <div>
                             <div class="wallet-stat-value" id="memberDebit">₪0</div>
                             <div class="wallet-stat-label">משיכות</div>
@@ -887,9 +887,9 @@ async function loadMemberData() {
             card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
         }
         document.getElementById('memberBalance').textContent=(bal>=0?'+':'')+formatMoney(bal);
-        document.getElementById('memberBalanceSub').textContent='הפקדות: '+formatMoney(balance.given)+' · משיכות: '+formatMoney(balance.received);
-        document.getElementById('memberCredit').textContent=formatMoney(balance.given);
-        document.getElementById('memberDebit').textContent=formatMoney(balance.received);
+        document.getElementById('memberBalanceSub').textContent='הפקדות: '+formatMoney(balance.received)+' · משיכות: '+formatMoney(balance.given);
+        document.getElementById('memberCredit').textContent=formatMoney(balance.received);
+        document.getElementById('memberDebit').textContent=formatMoney(balance.given);
         const list=document.getElementById('memberTxnList');
         if(!txns.length){list.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>אין תנועות עדיין</p></div>';}
         else{list.innerHTML=txns.map(t=>{
@@ -956,12 +956,12 @@ async function loadAdminData() {
         if(!dash.members.length){mL.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>אין בני משפחה</p></div>';}
         else{mL.innerHTML=dash.members.map(m=>{
             const b=m.balance; 
-            const c=b>0?'user-balance-neg':b<0?'user-balance-pos':'user-balance-zero';
+            const c=b>0?'user-balance-pos':b<0?'user-balance-neg':'user-balance-zero';
             const t=b>0?'חייב '+formatMoney(b):b<0?'זכאי '+formatMoney(b):'מאוזן';
             const safeName = m.display_name.replace(/'/g,"\\'");
             return '<div class="member-card" onclick="openAdminTxnModal('+m.id+',\''+safeName+'\')">'+
                 '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
-                '<div class="member-info"><div class="member-name">'+m.display_name+'</div><div class="member-stats">זכות: '+formatMoney(m.total_given)+' · חובה: '+formatMoney(m.total_received)+'</div></div>'+
+                '<div class="member-info"><div class="member-name">'+m.display_name+'</div><div class="member-stats">זכות: '+formatMoney(m.total_received)+' · חובה: '+formatMoney(m.total_given)+'</div></div>'+
                 '<div class="member-actions"><button class="btn btn-sm btn-success" onclick="event.stopPropagation();openAdminTxnModal('+m.id+',\''+safeName+'\')">💰</button></div>'+
                 '<div class="member-balance '+c+'">'+t+'</div></div>';
         }).join('');}
@@ -1029,7 +1029,7 @@ async function loadUserManageList() {
         if(!allUsers.length){list.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>אין בני משפחה</p></div>'; return;}
         list.innerHTML = allUsers.map(m=>{
             const b = m.balance;
-            const cls = b>0?'user-balance-neg':b<0?'user-balance-pos':'user-balance-zero';
+            const cls = b>0?'user-balance-pos':b<0?'user-balance-neg':'user-balance-zero';
             const txt = b>0?'חייב ₪'+b.toLocaleString():b<0?'זכאי ₪'+Math.abs(b).toLocaleString():'מאוזן';
             const safeName = m.display_name.replace(/'/g,"\\'");
             return '<div class="user-manage-card" id="userCard-'+m.id+'">'+
