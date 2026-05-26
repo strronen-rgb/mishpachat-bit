@@ -14,8 +14,8 @@
             --success: #10B981; --success-dark: #059669; --success-light: #34D399;
             --danger: #EF4444; --danger-dark: #DC2626; --danger-light: #F87171;
             --warning: #F59E0B; --warning-dark: #D97706;
-            --bg: #0F0F1A; --bg-card: #1A1A2E; --bg-surface: #252540;
-            --card: rgba(26,26,46,0.8); --text: #E8E8F0; --text-light: #9999B3; --border: rgba(255,255,255,0.08);
+            --bg: #16162a; --bg-card: #1e1e36; --bg-surface: #252540;
+            --card: rgba(30,30,54,0.9); --text: #E8E8F0; --text-light: #b0b0cc; --border: rgba(255,255,255,0.1);
             --shadow: 0 4px 24px rgba(0,0,0,0.3); --shadow-lg: 0 12px 48px rgba(0,0,0,0.4);
             --radius: 20px; --radius-sm: 14px; --radius-lg: 28px;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -210,7 +210,7 @@
 
         /* ===== CRYPTO WALLET CARD ===== */
         .wallet-card {
-            background: linear-gradient(165deg, #1a1a2e 0%, #16162a 40%, #1a1535 100%);
+            background: linear-gradient(165deg, #252540 0%, #2a2a4a 40%, #252545 100%);
             border-radius: var(--radius-lg);
             padding: 0;
             margin-bottom: 20px;
@@ -611,7 +611,6 @@
                 </div>
             </div>
 
-            {/* Profile Avatar + Name */}
             <div class="card" style="text-align:center;padding:20px 16px;">
                 <div class="profile-avatar-wrap">
                     <div class="profile-avatar-container">
@@ -629,9 +628,7 @@
                     <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" style="display:none">
                 </div>
             </div>
-            {/* Crypto Wallet Card */}
             <div class="wallet-card" id="memberBalanceCard">
-                {/* Total Balance */}
                 <div class="wallet-balance-section">
                     <div class="wallet-balance-header">
                         <div class="wallet-balance-dot"></div>
@@ -640,8 +637,6 @@
                     <div class="wallet-balance-amount" id="memberBalance">₪0</div>
                     <div class="wallet-balance-sub" id="memberBalanceSub">זכות: ₪0 · חובה: ₪0</div>
                 </div>
-
-                {/* Action Buttons */}
                 <div class="wallet-actions">
                     <button class="wallet-btn wallet-btn-deposit" onclick="openModal('receive')">
                         <svg viewBox="0 0 24 24" class="wallet-btn-icon"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 19h14" stroke="currentColor" stroke-width="2"/></svg>
@@ -655,14 +650,10 @@
                         <svg viewBox="0 0 24 24" class="wallet-btn-icon"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" fill="currentColor"/></svg>
                     </button>
                 </div>
-
-                {/* Admin notice */}
                 <div class="wallet-notice">
                     <span>🔒</span>
                     <span>משיכה מהקופה דורשת אישור מנהל בלבד</span>
                 </div>
-
-                {/* Quick stats */}
                 <div class="wallet-stats-quick">
                     <div class="wallet-stat-item">
                         <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--danger-light)"><path d="M5 19h14" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 5h14" stroke="currentColor" stroke-width="2" fill="none"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"/></svg>
@@ -681,9 +672,13 @@
                     </div>
                 </div>
             </div>
-            <div class="action-grid">
-                <button class="action-btn credit" onclick="openModal('receive')"><span class="icon">✅</span>הפקדה לקופה</button>
-                <button class="action-btn debit" onclick="openWithdrawRequestModal()"><span class="icon">📤</span>בקשת משיכה</button>
+            <div class="card" id="memberTxnCard">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary-light)"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                    היסטוריית תנועות
+                </div>
+                <ul id="memberTxnList" class="txn-list"></ul>
+            </div>
             </div>
             <div class="info-banner">
                 <span class="icon">🔒</span>
