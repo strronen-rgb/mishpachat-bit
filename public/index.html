@@ -419,9 +419,9 @@
                 </div>
             </div>
             <div class="balance-card" id="memberBalanceCard">
-                <div class="balance-label">היתרה שלך מול הקופה</div>
+                <div class="balance-label" id="memberBalanceLabel">היתרה שלך מול הקופה</div>
                 <div class="balance-amount" id="memberBalance">₪0</div>
-                <div class="balance-sub"><span>זכות <strong id="memberCredit">₪0</strong></span><span>חובה <strong id="memberDebit">₪0</strong></span></div>
+                <div class="balance-sub"><span id="memberCredit">₪0</span><span id="memberDebit"></span></div>
             </div>
             <div class="action-grid">
                 <button class="action-btn credit" onclick="openModal('receive')"><span class="icon">✅</span>הפקדה לקופה</button>
@@ -616,10 +616,26 @@ async function loadMemberData() {
     try {
         const [balance,txns] = await Promise.all([api('GET','/api/member/balance'), api('GET','/api/member/transactions')]);
         const bal=balance.balance;
-        document.getElementById('memberBalanceCard').className='balance-card '+(bal>0?'negative':bal<0?'positive':'');
-        document.getElementById('memberBalance').textContent=(bal>0?'-':bal<0?'+':'')+formatMoney(bal);
-        document.getElementById('memberCredit').textContent=formatMoney(balance.given);
-        document.getElementById('memberDebit').textContent=formatMoney(balance.received);
+        const given=balance.given, received=balance.received;
+        if(given>received){
+            document.getElementById('memberBalanceCard').className='balance-card negative';
+            document.getElementById('memberBalanceLabel').textContent='החובה שלך לקופה';
+            document.getElementById('memberBalance').textContent='-'+formatMoney(given-received);
+            document.getElementById('memberCredit').textContent='';
+            document.getElementById('memberDebit').textContent='חובה '+formatMoney(given-received);
+        } else if(received>given){
+            document.getElementById('memberBalanceCard').className='balance-card positive';
+            document.getElementById('memberBalanceLabel').textContent='הזכות שלך מהקופה';
+            document.getElementById('memberBalance').textContent='+'+formatMoney(received-given);
+            document.getElementById('memberCredit').textContent='זכות '+formatMoney(received-given);
+            document.getElementById('memberDebit').textContent='';
+        } else {
+            document.getElementById('memberBalanceCard').className='balance-card';
+            document.getElementById('memberBalanceLabel').textContent='היתרה שלך מול הקופה';
+            document.getElementById('memberBalance').textContent='₪0';
+            document.getElementById('memberCredit').textContent='זכות ₪0';
+            document.getElementById('memberDebit').textContent='';
+        }
         const list=document.getElementById('memberTxnList');
         if(!txns.length){list.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>אין תנועות עדיין</p></div>';}
         else{list.innerHTML=txns.map(t=>{
