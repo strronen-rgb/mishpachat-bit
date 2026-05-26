@@ -178,7 +178,7 @@ app.post('/api/member/transaction', requireAuth, async (req, res) => {
         if (parseFloat(amount) <= 0) return res.status(400).json({ error: 'סכום חייב להיות חיובי' });
         // Members can only deposit (receive type). Withdrawals require admin.
         if (type === 'give') {
-            return res.status(403).json({ error: 'משיכה מהקופה דורשת אישור מנהל בלבד' });
+            return res.status(403).json({ error: 'משיכה מהקופה דורשת אישור מנהל', requires_approval: true });
         }
         const result = await db.addTransaction(req.user.id, type, parseFloat(amount), description || '');
         res.json({ success: true, transaction: result });
@@ -232,6 +232,78 @@ app.post('/api/transaction/:txnId/receipt', requireAuth, receiptUpload.single('r
         res.json({ success: true, receipt_url: receiptUrl });
     } catch (err) {
         console.error('Receipt upload error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
+// ---- WITHDRAWAL REQUEST ROUTES ----
+
+// Member: request withdrawal
+app.post('/api/member/withdraw-request', requireAuth, async (req, res) => {
+    try {
+        const { amount, description } = req.body;
+        if (!amount || parseFloat(amount) <= 0) {
+            return res.status(400).json({ error: 'סכום לא תקיף' });
+        }
+        // Check balance
+        const balance = await db.getFullBalance(req.user.id);
+        if (Math.abs(balance.balance) < parseFloat(amount)) {
+            return res.status(400).json({ error: 'אין מספיק יתרה לביצוע המשיכה', available: Math.abs(balance.balance) });
+        }
+        const result = await db.createWithdrawalRequest(req.user.id, parseFloat(amount), description || '');
+        res.json({ success: true, request: result });
+    } catch (err) {
+        console.error('Withdraw request error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
+// Member: get my withdrawal requests
+app.get('/api/member/withdraw-requests', requireAuth, async (req, res) => {
+    try {
+        const requests = await db.getMyWithdrawalRequests(req.user.id);
+        res.json(requests);
+    } catch (err) {
+        console.error('Get withdraw requests error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
+// Admin: get all pending withdrawal requests
+app.get('/api/admin/withdraw-requests', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { status } = req.query;
+        const requests = await db.getAllWithdrawalRequests(status || null);
+        res.json(requests);
+    } catch (err) {
+        console.error('Admin get withdraw requests error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
+// Admin: approve withdrawal request
+app.post('/api/admin/withdraw-requests/:id/approve', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const requestId = parseInt(req.params.id);
+        const result = await db.approveWithdrawalRequest(requestId, req.user.id);
+        if (result.error) return res.status(400).json({ error: result.error });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('Approve withdraw request error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
+// Admin: reject withdrawal request
+app.post('/api/admin/withdraw-requests/:id/reject', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const requestId = parseInt(req.params.id);
+        const { reason } = req.body;
+        const result = await db.rejectWithdrawalRequest(requestId, req.user.id, reason || '');
+        if (result.error) return res.status(400).json({ error: result.error });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('Reject withdraw request error:', err);
         res.status(500).json({ error: 'שגיאת שרת' });
     }
 });

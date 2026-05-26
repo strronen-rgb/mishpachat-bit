@@ -189,9 +189,86 @@ initDb().then(() => seedIfEmpty()).catch(err => {
     process.exit(1);
 });
 
+// ---- WITHDRAWAL REQUEST FUNCTIONS ----
+
+async function createWithdrawalRequest(userId, amount, description = '') {
+    const result = await pool.query(
+        'INSERT INTO withdrawal_requests (user_id, amount, description) VALUES ($1, $2, $3) RETURNING id',
+        [userId, parseFloat(amount), description]
+    );
+    const id = result.rows[0].id;
+    return {
+        id,
+        user_id: userId,
+        amount: parseFloat(amount),
+        description,
+        status: 'pending',
+        requested_at: new Date().toISOString()
+    };
+}
+
+async function getMyWithdrawalRequests(userId) {
+    return await all(
+        'SELECT * FROM withdrawal_requests WHERE user_id = $1 ORDER BY requested_at DESC',
+        [userId]
+    );
+}
+
+async function getAllWithdrawalRequests(status = null) {
+    if (status) {
+        return await all(
+            `SELECT wr.*, u.display_name 
+             FROM withdrawal_requests wr 
+             JOIN users u ON wr.user_id = u.id 
+             WHERE wr.status = $1 
+             ORDER BY wr.requested_at DESC`,
+            [status]
+        );
+    }
+    return await all(
+        `SELECT wr.*, u.display_name 
+         FROM withdrawal_requests wr 
+         JOIN users u ON wr.user_id = u.id 
+         ORDER BY wr.requested_at DESC`
+    );
+}
+
+async function approveWithdrawalRequest(requestId, adminId) {
+    // Get the request
+    const request = await get('SELECT * FROM withdrawal_requests WHERE id = $1', [requestId]);
+    if (!request) return { error: 'בקשה לא נמצאה' };
+    if (request.status !== 'pending') return { error: 'הבקשה כבר טופלה' };
+
+    // Create the actual transaction (give = withdrawal)
+    await addTransaction(request.user_id, 'give', request.amount, request.description || 'משיכה מאושרת');
+
+    // Update request status
+    await pool.query(
+        'UPDATE withdrawal_requests SET status = $1, resolved_at = NOW(), resolved_by = $2 WHERE id = $3',
+        ['approved', adminId, requestId]
+    );
+
+    return { success: true, request_id: requestId, amount: request.amount };
+}
+
+async function rejectWithdrawalRequest(requestId, adminId, reason = '') {
+    const request = await get('SELECT * FROM withdrawal_requests WHERE id = $1', [requestId]);
+    if (!request) return { error: 'בקשה לא נמצאה' };
+    if (request.status !== 'pending') return { error: 'הבקשה כבר טופלה' };
+
+    await pool.query(
+        'UPDATE withdrawal_requests SET status = $1, resolved_at = NOW(), resolved_by = $2, rejection_reason = $3 WHERE id = $4',
+        ['rejected', adminId, reason, requestId]
+    );
+
+    return { success: true, request_id: requestId };
+}
+
 module.exports = {
     pool, run, get, all,
     createUser, authenticateUser, getUserById, getAllMembers, getAllUsers,
     getUserBalance, getFullBalance, getFamilyDebt, getAdminDashboard,
-    addTransaction, getUserTransactions, getMyTransactions
+    addTransaction, getUserTransactions, getMyTransactions,
+    createWithdrawalRequest, getMyWithdrawalRequests, getAllWithdrawalRequests,
+    approveWithdrawalRequest, rejectWithdrawalRequest
 };
