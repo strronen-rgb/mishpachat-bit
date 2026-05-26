@@ -93,8 +93,8 @@ async function getFullBalance(userId) {
     const received = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'receive'", [userId]);
     const given = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'give'", [userId]);
     return {
-        given: received.total,
-        received: given.total,
+        given: given.total,
+        received: received.total,
         balance: given.total - received.total
     };
 }
@@ -115,7 +115,7 @@ async function getAdminDashboard() {
     let totalOwed = 0;
     for (const m of members) {
         const bal = await getFullBalance(m.id);
-        if (bal.balance > 0) totalOwed += bal.balance;
+        if (bal.balance < 0) totalOwed += Math.abs(bal.balance);
         dashboard.push({
             ...m,
             balance: bal.balance,
