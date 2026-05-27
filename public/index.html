@@ -3,8 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6C63FF">
+    <meta name="theme-color" content="#16162a">
+    <link rel="manifest" href="/manifest.json">
+    <!-- iOS PWA meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="משפחביט">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/icons/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- Prevent telephone number detection -->
+    <meta name="format-detection" content="telephone=no">
+    <!-- Fullscreen on iOS -->
+    <meta name="mobile-web-app-capable" content="yes">
     <title>משפחביט — ניהול כספים משפחתי</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -18,12 +35,22 @@
             --card: rgba(30,30,54,0.9); --text: #E8E8F0; --text-light: #b0b0cc; --border: rgba(255,255,255,0.1);
             --shadow: 0 4px 24px rgba(0,0,0,0.3); --shadow-lg: 0 12px 48px rgba(0,0,0,0.4);
             --radius: 20px; --radius-sm: 14px; --radius-lg: 28px;
+            --safe-top: env(safe-area-inset-top, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --glow-primary: 0 0 20px rgba(108,99,255,0.4);
             --glow-success: 0 0 20px rgba(16,185,129,0.4);
             --glow-danger: 0 0 20px rgba(239,68,68,0.4);
         }
         body { font-family: 'Heebo', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+        /* ===== iOS STANDALONE PWA ===== */
+        @supports (padding: max(0px)) {
+            #loginPage, #memberPage, #adminPage {
+                padding-top: max(var(--safe-top), 12px);
+                padding-bottom: max(var(--safe-bottom), 12px);
+            }
+            .fab { bottom: calc(var(--safe-bottom) + 16px) !important; }
+        }
 
         /* ===== WEBGL SHADER BACKGROUND ===== */
         #shader-bg { position: fixed; inset: 0; z-index: 0; }
@@ -1473,6 +1500,51 @@ document.addEventListener('click', function(e) {
         bc.appendChild(shim);
     }
 })();
+</script>
+<script>
+  // ===== PWA SERVICE WORKER REGISTRATION =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        console.log('PWA: ServiceWorker registered', reg.scope);
+      }).catch(function(err) {
+        console.log('PWA: ServiceWorker registration failed', err);
+      });
+    });
+  }
+
+  // ===== iOS PWA DETECTION =====
+  (function() {
+    // Fix status bar color for iOS standalone mode
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone === true;
+    if (isIOS && isStandalone) {
+      document.documentElement.style.setProperty('--safe-top', 'env(safe-area-inset-top)');
+      console.log('PWA: Running in iOS standalone mode');
+    }
+  })();
+  // ===== iOS ADD TO HOME SCREEN PROMPT =====
+  (function() {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone === true;
+    if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
+      // Show a subtle banner after 2 seconds
+      setTimeout(function() {
+        var banner = document.createElement('div');
+        banner.id = 'iosPwaBanner';
+        banner.innerHTML =
+          '<div style="position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,0.4);">' +
+          '<span style="font-size:24px;">📲</span>' +
+          '<div style="flex:1;text-align:right;font-size:14px;line-height:1.4;">' +
+          '<div style="font-weight:600;color:var(--text);">הוסף משפחביט למסך הבית</div>' +
+          '<div style="font-size:12px;color:var(--text-light);">פתח בספארי → ‎<span style="font-family:san-serif;">⎋</span> שתף → הוסף למסך הבית</div>' +
+          '</div>' +
+          '<button onclick="this.parentElement.remove();sessionStorage.setItem(\'pwaPromptShown\',\'1\')" style="background:none;border:none;color:var(--text-light);font-size:20px;cursor:pointer;padding:4px;">✕</button>' +
+          '</div>';
+        document.body.appendChild(banner);
+      }, 2000);
+    }
+  })();
 </script>
 </body>
 </html>
