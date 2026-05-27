@@ -172,6 +172,26 @@ async function getMyTransactions(userId, limit = 50) {
     );
 }
 
+async function deleteTransaction(txnId, userId) {
+    // Verify the transaction belongs to the user
+    const txn = await get('SELECT * FROM transactions WHERE id = $1', [txnId]);
+    if (!txn) return { error: 'תנועה לא נמצאה' };
+    // Allow delete if: user owns it, or user is admin
+    if (txn.user_id !== userId) {
+        const user = await getUserById(userId);
+        if (!user || user.role !== 'admin') return { error: 'אין הרשאה למחוק תנועה זו' };
+    }
+    // Delete receipt file if exists
+    if (txn.receipt_url) {
+        const fs = require('fs');
+        const path = require('path');
+        const receiptPath = path.join(__dirname, 'public', txn.receipt_url);
+        if (fs.existsSync(receiptPath)) fs.unlinkSync(receiptPath);
+    }
+    await run('DELETE FROM transactions WHERE id = $1', [txnId]);
+    return { success: true, deleted_id: txnId };
+}
+
 // ---- SEED DATA ----
 
 async function seedIfEmpty() {
@@ -281,7 +301,7 @@ module.exports = {
     pool, run, get, all,
     createUser, authenticateUser, getUserById, getAllMembers, getAllUsers,
     getUserBalance, getFullBalance, getFamilyDebt, getAdminDashboard,
-    addTransaction, getUserTransactions, getMyTransactions,
+    addTransaction, deleteTransaction, getUserTransactions, getMyTransactions,
     createWithdrawalRequest, getMyWithdrawalRequests, getAllWithdrawalRequests,
     approveWithdrawalRequest, rejectWithdrawalRequest
 };

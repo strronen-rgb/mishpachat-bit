@@ -237,6 +237,19 @@ app.post('/api/admin/transaction/:userId', requireAuth, requireAdmin, async (req
     }
 });
 
+// Delete a transaction (owner or admin)
+app.delete('/api/transaction/:txnId', requireAuth, async (req, res) => {
+    try {
+        const txnId = parseInt(req.params.txnId);
+        const result = await db.deleteTransaction(txnId, req.user.id);
+        if (result.error) return res.status(400).json({ error: result.error });
+        res.json({ success: true, deleted_id: txnId });
+    } catch (err) {
+        console.error('Delete transaction error:', err);
+        res.status(500).json({ error: 'שגיאת שרת' });
+    }
+});
+
 // Upload receipt for a transaction
 const receiptUpload = multer({
     storage: multer.diskStorage({

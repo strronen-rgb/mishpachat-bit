@@ -490,6 +490,9 @@
         .txn-receipt img { width: 100%; height: 100%; object-fit: cover; }
         .txn-receipt-placeholder { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 0.85em; cursor: pointer; flex-shrink: 0; border: 1px dashed var(--border); color: var(--text-light); transition: all 0.2s; }
         .txn-receipt-placeholder:hover { background: rgba(255,255,255,0.08); }
+        .btn-delete-txn { background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 1em; padding: 6px 8px; border-radius: 8px; opacity: 0; transition: all 0.2s; flex-shrink: 0; }
+        .txn-item:hover .btn-delete-txn { opacity: 0.6; }
+        .btn-delete-txn:hover { opacity: 1 !important; background: rgba(239,68,68,0.15); color: var(--danger-light); transform: scale(1.1); }
 
         /* ===== ADMIN ===== */
         .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -973,9 +976,28 @@ async function loadMemberData() {
             const receiptHtml = t.receipt_url 
                 ? '<div class="txn-receipt" onclick="openImageViewer(\''+t.receipt_url+'\')"><img src="'+t.receipt_url+'" alt="קבלה"></div>'
                 : '<div class="txn-receipt-placeholder" onclick="uploadReceipt('+t.id+')">📷</div>';
-            return '<li class="txn-item"><div class="txn-icon '+t.type+'">'+(isDebit?'📥':'📤')+'</div><div class="txn-details"><div class="txn-desc">'+(t.description||(isDebit?'הפקדה (קופה נתנה)':'משיכה (קופה החזירה)'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isDebit?'+':'−')+formatMoney(t.amount)+'</div></li>';
+            const delBtn = '<button class="btn-delete-txn" onclick="event.stopPropagation();deleteTxn('+t.id+')" title="מחק תנועה">🗑️</button>';
+            return '<li class="txn-item"><div class="txn-icon '+t.type+'">'+(isDebit?'📥':'📤')+'</div><div class="txn-details"><div class="txn-desc">'+(t.description||(isDebit?'הפקדה (קופה נתנה)':'משיכה (קופה החזירה)'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isDebit?'+':'−')+formatMoney(t.amount)+'</div>'+delBtn+'</li>';
         }).join('');}
     } catch(e){if(e.message.includes('auth')||e.message.includes('token'))logout();}
+}
+
+async function deleteTxn(txnId) {
+    if(!confirm('למחוק את התנועה? לא ניתן לבטל.')) return;
+    try {
+        await api('DELETE', '/api/transaction/' + txnId);
+        showToast('התנועה נמחקה', 'success');
+        loadMemberData();
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteAdminTxn(txnId) {
+    if(!confirm('למחוק את התנועה? לא ניתן לבטל.')) return;
+    try {
+        await api('DELETE', '/api/transaction/' + txnId);
+        showToast('התנועה נמחקה', 'success');
+        loadAdminTransactions(selectedMemberFilter);
+    } catch(e) { showToast(e.message, 'error'); }
 }
 
 function showAdminRequired() {
@@ -1063,7 +1085,8 @@ async function loadAdminTransactions(memberId = null) {
                     ? '<div class="txn-receipt" onclick="openImageViewer(\''+t.receipt_url+'\')"><img src="'+t.receipt_url+'" alt="קבלה"></div>'
                     : '';
                 const memberName = t.display_name || 'לא ידוע';
-                return '<li class="txn-item"><div class="avatar avatar-xs '+avatarColor(t.user_id)+'"><span class="initials">'+getInitials(memberName)+'</span></div><div class="txn-details"><div class="txn-desc"><strong>'+memberName+'</strong> — '+(t.description||(isDebit?'הפקדה (קופה נתנה)':'משיכה (קופה החזירה)'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isDebit?'+':'−')+formatMoney(t.amount)+'</div></li>';
+                const delBtn = '<button class="btn-delete-txn" onclick="event.stopPropagation();deleteAdminTxn('+t.id+')" title="מחק תנועה">🗑️</button>';
+                return '<li class="txn-item"><div class="avatar avatar-xs '+avatarColor(t.user_id)+'"><span class="initials">'+getInitials(memberName)+'</span></div><div class="txn-details"><div class="txn-desc"><strong>'+memberName+'</strong> — '+(t.description||(isDebit?'הפקדה (קופה נתנה)':'משיכה (קופה החזירה)'))+'</div><div class="txn-date">'+formatDate(t.created_at)+'</div></div>'+receiptHtml+'<div class="txn-amount '+t.type+'">'+(isDebit?'+':'−')+formatMoney(t.amount)+'</div>'+delBtn+'</li>';
             }).join('');
         }
         
