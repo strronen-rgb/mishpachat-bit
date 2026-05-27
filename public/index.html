@@ -872,6 +872,7 @@ function formatMoney(n) { return '₪'+Math.abs(n).toLocaleString('he-IL',{minim
 function formatDate(d) { return new Date(d).toLocaleDateString('he-IL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
 function getInitials(n) { return n.split(' ').map(w=>w[0]).join('').substring(0,2); }
 function avatarColor(id) { return AVATAR_COLORS[id % AVATAR_COLORS.length]; }
+function escapeHtml(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
 function renderAvatar(el, user, sizeClass) {
     if (!user) return;
@@ -879,7 +880,7 @@ function renderAvatar(el, user, sizeClass) {
     const initials = getInitials(user.display_name || user.username);
     const color = avatarColor(user.id);
     el.className = 'avatar ' + sizeClass + ' ' + color;
-    el.innerHTML = hasImg ? '<img src="'+user.avatar_url+'" alt="'+user.display_name+'">' : '<span class="initials">'+initials+'</span>';
+    el.innerHTML = hasImg ? '<img src="'+escapeHtml(user.avatar_url)+'" alt="'+escapeHtml(user.display_name)+'">' : '<span class="initials">'+escapeHtml(initials)+'</span>';
 }
 
 async function api(method, path, body=null, isForm=false) {
@@ -906,7 +907,7 @@ function logout() { currentToken=null; currentUser=null; localStorage.removeItem
 async function showMemberApp() {
     document.getElementById('memberApp').classList.remove('hidden');
     renderAvatar(document.getElementById('memberAvatar'), currentUser, 'avatar-sm');
-    renderAvatar(document.getElementById('memberBigAvatar'), currentUser, 'avatar-xl');
+    renderAvatar(document.getElementById('memberBigAvatar'), currentUser, 'avatar-xl');  // escaped in renderAvatar
     document.getElementById('memberName').textContent=currentUser.display_name;
     await loadMemberData();
     loadMyWithdrawRequests();
@@ -1000,7 +1001,7 @@ async function loadAdminData() {
             const b=m.balance; 
             const c=b>0?'user-balance-pos':b<0?'user-balance-neg':'user-balance-zero';
             const t=b>0?'חייב '+formatMoney(b):b<0?'זכאי '+formatMoney(b):'מאוזן';
-            const safeName = m.display_name.replace(/'/g,"\\'");
+            const safeName = escapeHtml(m.display_name).replace(/'/g,"\\'");
             return '<div class="member-card" onclick="openAdminTxnModal('+m.id+',\''+safeName+'\')">'+
                 '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
                 '<div class="member-info"><div class="member-name">'+m.display_name+'</div><div class="member-stats">זכות: '+formatMoney(m.total_received)+' · חובה: '+formatMoney(m.total_given)+'</div></div>'+
@@ -1082,7 +1083,7 @@ async function loadMyWithdrawRequests() {
             return '<div class="txn-item">'+
                 '<div class="txn-icon debit">📤</div>'+
                 '<div class="txn-details">'+
-                    '<div class="txn-desc">'+formatMoney(r.amount)+(r.description?' — '+r.description:'')+'</div>'+
+                    '<div class="txn-desc">'+formatMoney(r.amount)+escapeHtml(r.description?' — '+r.description:'')+'</div>'+
                     '<div class="txn-date">'+formatDate(r.requested_at)+'</div>'+
                 '</div>'+
                 '<div class="txn-amount" style="color:'+statusColor+'">'+statusIcon+' '+statusText+'</div>'+
@@ -1113,8 +1114,8 @@ async function loadAdminRequests() {
                         '<div class="avatar avatar-md '+avatarColor(r.user_id)+'"><span class="initials">'+getInitials(r.display_name||'?')+'</span></div>'+
                     '</div>'+
                     '<div class="user-manage-info">'+
-                        '<div class="user-manage-name">'+r.display_name+'</div>'+
-                        '<div class="user-manage-stats">סכום: <strong style="color:var(--danger-light)">'+formatMoney(r.amount)+'</strong> · '+formatDate(r.requested_at)+(r.description?'<br>📝 '+r.description:'')+'</div>'+
+                        '<div class="user-manage-name">'+escapeHtml(r.display_name)+'</div>'+
+                        '<div class="user-manage-stats">סכום: <strong style="color:var(--danger-light)">'+formatMoney(r.amount)+'</strong> · '+formatDate(r.requested_at)+escapeHtml(r.description?'<br>📝 '+r.description:'')+'</div>'+
                     '</div>'+
                     '<div class="user-manage-actions">'+
                         '<button class="btn btn-sm btn-success" onclick="approveRequest('+r.id+')">✓ אשר</button>'+
@@ -1133,8 +1134,8 @@ async function loadAdminRequests() {
                 return '<div class="txn-item">'+
                     '<div class="avatar avatar-xs '+avatarColor(r.user_id)+'"><span class="initials">'+getInitials(r.display_name||'?')+'</span></div>'+
                     '<div class="txn-details">'+
-                        '<div class="txn-desc"><strong>'+r.display_name+'</strong> — '+formatMoney(r.amount)+(r.description?' — '+r.description:'')+'</div>'+
-                        '<div class="txn-date">'+formatDate(r.requested_at)+(r.resolved_at?' · טופלה: '+formatDate(r.resolved_at):'')+(r.rejection_reason?'<br>📝 סיבה: '+r.rejection_reason:'')+'</div>'+
+                        '<div class="txn-desc"><strong>'+escapeHtml(r.display_name)+'</strong> — '+formatMoney(r.amount)+(r.description?' — '+r.description:'')+'</div>'+
+                        '<div class="txn-date">'+formatDate(r.requested_at)+(r.resolved_at?' · טופלה: '+formatDate(r.resolved_at):'')+escapeHtml(r.rejection_reason?'<br>📝 סיבה: '+r.rejection_reason:'')+'</div>'+
                     '</div>'+
                     '<div class="txn-amount" style="color:'+statusColor+'">'+statusIcon+' '+(r.status==='approved'?'אושרה':'נדחתה')+'</div>'+
                 '</div>';
@@ -1201,13 +1202,13 @@ async function loadUserManageList() {
             const b = m.balance;
             const cls = b>0?'user-balance-pos':b<0?'user-balance-neg':'user-balance-zero';
             const txt = b>0?'חייב ₪'+b.toLocaleString():b<0?'זכאי ₪'+Math.abs(b).toLocaleString():'מאוזן';
-            const safeName = m.display_name.replace(/'/g,"\\'");
+            const safeName = escapeHtml(m.display_name).replace(/'/g,"\\'");
             return '<div class="user-manage-card" id="userCard-'+m.id+'">'+
                 '<div class="user-manage-avatar">'+
                     '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
                 '</div>'+
                 '<div class="user-manage-info">'+
-                    '<div class="user-manage-name">'+m.display_name+'</div>'+
+                    '<div class="user-manage-name">'+escapeHtml(m.display_name)+'</div>'+
                     '<div class="user-manage-stats">@'+m.username+' · יתרה: <span class="'+cls+'">'+txt+'</span></div>'+
                 '</div>'+
                 '<div class="user-manage-actions">'+
@@ -1276,7 +1277,7 @@ async function addUser() {
 // ===== ADMIN TRANSACTION MODAL =====
 async function openAdminTxnModal(memberId, memberName) {
     adminTxnMemberId = memberId;
-    document.getElementById('adminModalTitle').textContent = '💰 תנועה עבור ' + memberName;
+    document.getElementById('adminModalTitle').textContent = '💰 תנועה עבור ' + escapeHtml(memberName);
     document.getElementById('adminTxnAmount').value = '';
     document.getElementById('adminTxnDescription').value = '';
     document.getElementById('adminTxnType').value = 'receive';

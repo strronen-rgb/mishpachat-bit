@@ -8,7 +8,7 @@ const db = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'mishpachat-bit-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || (() => { console.error('FATAL: JWT_SECRET env var is not set'); process.exit(1); })();
 
 // ---- AVATAR UPLOAD SETUP ----
 const uploadDir = path.join(__dirname, 'public', 'avatars');
@@ -34,9 +34,44 @@ const upload = multer({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/avatars', express.static(uploadDir));
+
+// ---- SECURITY HEADERS ----
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'");
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
+// ---- RATE LIMITING ----
+const rateLimitWindow = 15 * 60 * 1000; // 15 minutes
+const rateLimitMax = 100;
+const rateLimitStore = new Map();
+app.use((req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    if (!rateLimitStore.has(ip)) {
+        rateLimitStore.set(ip, { count: 1, resetAt: now + rateLimitWindow });
+        return next();
+    }
+    const entry = rateLimitStore.get(ip);
+    if (now > entry.resetAt) {
+        entry.count = 1;
+        entry.resetAt = now + rateLimitWindow;
+        return next();
+    }
+    entry.count++;
+    if (entry.count > rateLimitMax) {
+        return res.status(429).json({ error: 'יותר מדי בקשות. נסה שוב מאוחר יותר.' });
+    }
+    next();
+});
 
 // ---- AUTH MIDDLEWARE ----
 
