@@ -449,8 +449,8 @@
         .txn-item:last-child { border-bottom: none; }
         .txn-item:hover { background: rgba(255,255,255,0.02); margin: 0 -12px; padding: 16px 12px; border-radius: var(--radius-sm); }
         .txn-icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; flex-shrink: 0; }
-        .txn-icon.receive { background: rgba(239,68,68,0.15); }
-        .txn-icon.give { background: rgba(16,185,129,0.15); }
+        .txn-icon.receive { background: rgba(16,185,129,0.15); }
+        .txn-icon.give { background: rgba(239,68,68,0.15); }
         .txn-details { flex: 1; min-width: 0; }
         .txn-desc { font-weight: 600; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .txn-date { color: var(--text-light); font-size: 0.8em; margin-top: 3px; }
@@ -632,10 +632,10 @@
                 <div class="wallet-balance-section">
                     <div class="wallet-balance-header">
                         <div class="wallet-balance-dot"></div>
-                        <span class="wallet-balance-label">יתרה כוללת מול הקופה</span>
+                        <span class="wallet-balance-label">מצב החשבון שלך</span>
                     </div>
                     <div class="wallet-balance-amount" id="memberBalance">₪0</div>
-                    <div class="wallet-balance-sub" id="memberBalanceSub">זכות: ₪0 · חובה: ₪0</div>
+                    <div class="wallet-balance-sub" id="memberBalanceSub">הפקדות: ₪0 · משיכות: ₪0</div>
                 </div>
                 <div class="wallet-actions">
                     <button class="wallet-btn wallet-btn-deposit" onclick="openModal('receive')">
@@ -652,7 +652,7 @@
                 </div>
                 <div class="wallet-notice">
                     <span>🔒</span>
-                    <span>משיכה מהקופה דורשת אישור מנהל בלבד</span>
+                    <span>משיכה מהקופה דורשת אישור מנהל — הגש בקשה והמנהל יטפל בה</span>
                 </div>
                 <div class="wallet-stats-quick">
                     <div class="wallet-stat-item">
@@ -664,7 +664,7 @@
                     </div>
                     <div class="wallet-stat-divider"></div>
                     <div class="wallet-stat-item">
-                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--success-light)"><path d="M12 2v20M17 12H7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        <svg viewBox="0 0 24 24" class="wallet-stat-icon" style="color:var(--danger-light)"><path d="M12 2v20M17 12H7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
                         <div>
                             <div class="wallet-stat-value" id="memberDebit">₪0</div>
                             <div class="wallet-stat-label">משיכות</div>
@@ -787,7 +787,7 @@
             <div class="modal-title">📤 בקשת משיכה מהקופה</div>
             <div class="info-banner" style="margin-bottom:20px">
                 <span class="icon">ℹ️</span>
-                <span>הבקשה תישלח למנהל לאישור. המשיכה תבוצע רק לאחר אישור.</span>
+                <span>הבקשה תישלח למנהל לאישור. הסכום ינוכה מיתרתך רק לאחר אישור.</span>
             </div>
             <div class="form-group"><label>סכום למשיכה (₪)</label><input type="number" id="withdrawAmount" placeholder="0" min="0.01" step="0.01" inputmode="decimal"></div>
             <div class="form-group"><label>סיבת המשיכה / תיאור</label><input type="text" id="withdrawDescription" placeholder="למה אתה מבקש למשוך?"></div>
@@ -930,9 +930,9 @@ async function loadMemberData() {
             card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
         }
         document.getElementById('memberBalance').textContent=(bal>=0?'+':'')+formatMoney(bal);
-        document.getElementById('memberBalanceSub').textContent='הפקדות: '+formatMoney(balance.received)+' · משיכות: '+formatMoney(balance.given);
-        document.getElementById('memberCredit').textContent=formatMoney(balance.received);
-        document.getElementById('memberDebit').textContent=formatMoney(balance.given);
+        document.getElementById('memberBalanceSub').textContent='הפקדות: '+formatMoney(balance.given)+' · משיכות: '+formatMoney(balance.received);
+        document.getElementById('memberCredit').textContent=formatMoney(balance.given);
+        document.getElementById('memberDebit').textContent=formatMoney(balance.received);
         const list=document.getElementById('memberTxnList');
         if(!txns.length){list.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>אין תנועות עדיין</p></div>';}
         else{list.innerHTML=txns.map(t=>{
@@ -1000,7 +1000,7 @@ async function loadAdminData() {
         else{mL.innerHTML=dash.members.map(m=>{
             const b=m.balance; 
             const c=b>0?'user-balance-pos':b<0?'user-balance-neg':'user-balance-zero';
-            const t=b>0?'חייב '+formatMoney(b):b<0?'זכאי '+formatMoney(b):'מאוזן';
+            const t=b>0?'זכאי '+formatMoney(b):b<0?'חייב '+formatMoney(b):'מאוזן';
             const safeName = escapeHtml(m.display_name).replace(/'/g,"\\'");
             return '<div class="member-card" onclick="openAdminTxnModal('+m.id+',\''+safeName+'\')">'+
                 '<div class="avatar avatar-md '+avatarColor(m.id)+'"><span class="initials">'+getInitials(m.display_name)+'</span></div>'+
@@ -1209,7 +1209,7 @@ async function loadUserManageList() {
                 '</div>'+
                 '<div class="user-manage-info">'+
                     '<div class="user-manage-name">'+escapeHtml(m.display_name)+'</div>'+
-                    '<div class="user-manage-stats">@'+m.username+' · יתרה: <span class="'+cls+'">'+txt+'</span></div>'+
+                    '<div class="user-manage-stats">@'+m.username+' · הפקדות: '+formatMoney(m.total_given)+' · משיכות: '+formatMoney(m.total_received)+'</div>'+
                 '</div>'+
                 '<div class="user-manage-actions">'+
                     '<button class="btn btn-sm btn-ghost" onclick="editUser('+m.id+',\''+safeName+'\',\''+m.username.replace(/'/g,"\\'")+'\')">✏️</button>'+
@@ -1277,7 +1277,7 @@ async function addUser() {
 // ===== ADMIN TRANSACTION MODAL =====
 async function openAdminTxnModal(memberId, memberName) {
     adminTxnMemberId = memberId;
-    document.getElementById('adminModalTitle').textContent = '💰 תנועה עבור ' + escapeHtml(memberName);
+    document.getElementById('adminModalTitle').textContent = '💰 הפקדה/משיכה עבור ' + escapeHtml(memberName);
     document.getElementById('adminTxnAmount').value = '';
     document.getElementById('adminTxnDescription').value = '';
     document.getElementById('adminTxnType').value = 'receive';
@@ -1316,7 +1316,7 @@ async function submitAdminTransaction() {
         }
         closeAdminModal();
         playCashSound();
-        showToast('התנועה נשמרה!','success');
+        showToast('הפקדה בוצעה בהצלחה!','success');
         loadAdminData();
     } catch(e){showToast(e.message,'error');}
 }
@@ -1325,8 +1325,8 @@ async function submitAdminTransaction() {
 function openModal(type) {
     txnType=type;
     const isCredit = type==='receive';
-    document.getElementById('modalTitle').textContent=isCredit?'✅ הפקדה לקופה':'📤 משיכה מהקופה';
-    const s=document.getElementById('modalSubmit'); s.className='btn '+(isCredit?'btn-success':'btn-danger'); s.textContent=isCredit?'אשר הפקדה':'אשר משיכה';
+    document.getElementById('modalTitle').textContent=isCredit?'✅ הפקדה לקופה':'📤 בקשת משיכה מהקופה';
+    const s=document.getElementById('modalSubmit'); s.className='btn '+(isCredit?'btn-success':'btn-danger'); s.textContent=isCredit?'אשר הפקדה':'שלח בקשת משיכה';
     document.getElementById('txnAmount').value=''; document.getElementById('txnDescription').value='';
     pendingReceiptFile = null;
     document.getElementById('receiptPreview').style.display='none';
@@ -1361,7 +1361,7 @@ async function submitTransaction() {
         }
         closeModal();
         playCashSound();
-        showToast('התנועה נשמרה!','success');
+        showToast('הפקדה בוצעה בהצלחה!','success');
         loadMemberData();
     } catch(e){showToast(e.message,'error');}
 }
