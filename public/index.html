@@ -866,28 +866,11 @@
     <div id="installGuideModal" class="modal-overlay" onclick="if(event.target===this)closeInstallGuide()">
         <div class="modal">
             <div class="modal-handle"></div>
-            <div class="install-guide-modal">
-                <span class="guide-icon">📱</span>
-                <div class="guide-title">התקן את משפחביט כאפליקציית אייפון!</div>
-                <div class="install-guide-step">
-                    <div class="step-num">1</div>
-                    <div class="step-text">פתח את האתר <strong>בספארי</strong> (לא בכרום)</div>
-                </div>
-                <div class="install-guide-step">
-                    <div class="step-num">2</div>
-                    <div class="step-text">לחץ על כפתור <strong>שתף</strong> (Share) בתחתית המסך ↑</div>
-                </div>
-                <div class="install-guide-step">
-                    <div class="step-num">3</div>
-                    <div class="step-text">גולל למטה ולחץ <strong>הוסף למסך הבית</strong></div>
-                </div>
-                <div class="install-guide-step">
-                    <div class="step-num">4</div>
-                    <div class="step-text">לחץ <strong>הוסף</strong> פינה ימינה עליונה ✅</div>
-                </div>
-                <p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">כעת האפליקציה תיראה כמו אפ אמיתי — עם אייקון על מסך הבית, מסך פתיחה, וחוויית מסך מלא!</p>
+            <div class="install-guide-modal" id="installGuideContent">
+                <!-- Filled dynamically by JS based on platform -->
             </div>
-            <div class="modal-actions" style="flex-direction:column;gap:8px;">
+            <div id="installGuideActions" style="flex-direction:column;gap:8px;display:flex;">
+                <button id="installPwaBtn" class="btn btn-primary guide-btn-install" style="margin-top:4px;display:none;">➕ התקן אפליקציה</button>
                 <button class="btn btn-primary guide-btn-install" onclick="closeInstallGuide()" style="margin-top:4px;">✅ הבנתי!</button>
                 <button class="guide-btn-dismiss" onclick="closeInstallGuide()">סגור</button>
             </div>
@@ -1441,8 +1424,71 @@ function openModal(type) {
     setTimeout(()=>document.getElementById('txnAmount').focus(),150);
 }
 function closeModal() { document.getElementById('txnModal').classList.remove('active'); }
+var deferredPrompt = null; // Chrome PWA install prompt
+
+// Listen for Chrome's beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show install button in header for all platforms that support it
+    var installBtn = document.getElementById('installBtn');
+    if (installBtn) installBtn.style.display = 'inline-flex';
+});
+
 function closeInstallGuide() { document.getElementById('installGuideModal').classList.remove('active'); }
-function openInstallGuide() { document.getElementById('installGuideModal').classList.add('active'); }
+
+function openInstallGuide() {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone === true;
+    var content = document.getElementById('installGuideContent');
+    var pwaBtn = document.getElementById('installPwaBtn');
+
+    if (isIOS && !isStandalone) {
+        // iOS Safari instructions
+        content.innerHTML =
+            '<span class="guide-icon">📱</span>' +
+            '<div class="guide-title">התקן את משפחביט למסך הבית!</div>' +
+            '<div class="install-guide-step"><div class="step-num">1</div><div class="step-text">פתח את האתר <strong>בספארי</strong></div></div>' +
+            '<div class="install-guide-step"><div class="step-num">2</div><div class="step-text">לחץ על כפתור <strong>שתף</strong> (Share) בתחתית ↑</div></div>' +
+            '<div class="install-guide-step"><div class="step-num">3</div><div class="step-text">גולל למטה ולחץ <strong>הוסף למסך הבית</strong></div></div>' +
+            '<div class="install-guide-step"><div class="step-num">4</div><div class="step-text">לחץ <strong>הוסף</strong> פינה ימינה עליונה ✅</div></div>' +
+            '<p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">כעת האפליקציה תיראה כמו אפ אמיתי — עם אייקון, מסך פתיחה, וחוויית מסך מלא!</p>';
+        pwaBtn.style.display = 'none';
+    } else if (deferredPrompt) {
+        // Chrome/Edge/Android — native PWA install
+        content.innerHTML =
+            '<span class="guide-icon">🖥️</span>' +
+            '<div class="guide-title">התקן את משפחביט כאפליקציה!</div>' +
+            '<div class="install-guide-step"><div class="step-num">1</div><div class="step-text">לחץ על הכפתור <strong>➕ התקן אפליקציה</strong> למטה</div></div>' +
+            '<div class="install-guide-step"><div class="step-num">2</div><div class="step-text">בחלון שייפתח, לחץ <strong>התקן</strong></div></div>' +
+            '<div class="install-guide-step"><div class="step-num">3</div><div class="step-text">האפליקציה תותקן על המחשב/טלפון שלך ✅</div></div>' +
+            '<p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">אפשר גם להתקין דרך כפתור ה-➕ בשורת הכתובת של הדפדפן.</p>';
+        pwaBtn.style.display = 'block';
+        pwaBtn.onclick = function() {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(choice) {
+                if (choice.outcome === 'accepted') {
+                    showToast('האפליקציה הותקנה בהצלחה! 🎉', 'success');
+                }
+                deferredPrompt = null;
+                pwaBtn.style.display = 'none';
+                closeInstallGuide();
+            });
+        };
+    } else if (!isStandalone) {
+        // Fallback — browser doesn't support PWA install
+        content.innerHTML =
+            '<span class="guide-icon">ℹ️</span>' +
+            '<div class="guide-title">מידע על התקנה</div>' +
+            '<div class="install-guide-step"><div class="step-num">ℹ️</div><div class="step-text">בדפדפן הזה אין תמיכה בהתקנת PWA ישירה</div></div>' +
+            '<p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">אפשר להשתמש באפליקציה ישירות מהדפדפן. לחווייה מיטבית, פתח בכרום (דסקטופ) או בספארי (iPhone).</p>';
+        pwaBtn.style.display = 'none';
+    }
+
+    if (!isStandalone) {
+        document.getElementById('installGuideModal').classList.add('active');
+    }
+}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAdminModal();closeInstallGuide();}});
 function previewReceipt(event) {
     const file = event.target.files[0];
