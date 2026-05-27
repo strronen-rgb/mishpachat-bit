@@ -586,8 +586,8 @@
         .install-guide-modal .guide-btn-install { margin-top: 18px; width: 100%; padding: 14px; font-size: 1.05em; }
         .install-guide-modal .guide-btn-dismiss { margin-top: 8px; background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 0.85em; padding: 8px; }
         .install-guide-modal .share-icon-demo { font-size: 1.3em; display: inline-block; margin: 0 2px; }
-        /* Install button in header */
-        #installBtn { display: none; background: none; border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 6px 12px; border-radius: 10px; font-size: 0.85em; transition: all 0.2s; }
+        /* Install button in header — always visible, triggers guide or native install */
+        #installBtn { display: inline-flex; align-items: center; gap: 4px; background: none; border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 6px 12px; border-radius: 10px; font-size: 0.85em; font-family: inherit; transition: all 0.2s; }
         #installBtn:hover { border-color: var(--primary); color: var(--primary-light); }
 
         /* ===== ADMIN MEMBER SELECT ===== */
@@ -653,7 +653,7 @@
                 <div class="header-user">
                     <div id="memberAvatar" class="avatar avatar-sm"><span class="initials"></span></div>
                     <span id="memberName" class="header-user-name"></span>
-                    <button id="installBtn" onclick="openInstallGuide()">📲 התקן</button>
+                    <button id="installBtn" onclick="handleInstallClick(event)">📲 התקן</button>
                     <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
                 </div>
             </div>
@@ -1476,12 +1476,32 @@ function openInstallGuide() {
             });
         };
     } else if (!isStandalone) {
-        // Fallback — browser doesn't support PWA install
+        // Fallback — show platform-specific tips
+        var isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+        var isAndroid = /Android/.test(navigator.userAgent);
+        var title, steps;
+        if (isChrome && isAndroid) {
+            title = 'התקן את משפחביט לאנדרואיד!';
+            steps =
+                '<div class="install-guide-step"><div class="step-num">1</div><div class="step-text">פתח את התפריט <strong>⋮</strong> (3 נקודות) בפינה העליונה</div></div>' +
+                '<div class="install-guide-step"><div class="step-num">2</div><div class="step-text">לחץ <strong>התקן אפליקציה</strong> או <strong>הוסף למסך הבית</strong></div></div>' +
+                '<div class="install-guide-step"><div class="step-num">3</div><div class="step-text">לחץ <strong>התקן</strong> בחלון שייפתח ✅</div></div>';
+        } else if (isChrome) {
+            title = 'התקן את משפחביט למחשב!';
+            steps =
+                '<div class="install-guide-step"><div class="step-num">1</div><div class="step-text">חפש את כפתור ה-<strong>➕</strong> בשורת הכתובת מימין</div></div>' +
+                '<div class="install-guide-step"><div class="step-num">2</div><div class="step-text">לחץ עליו ואשר <strong>התקן</strong></div></div>' +
+                '<div class="install-guide-step"><div class="step-num">3</div><div class="step-text">האפליקציה תותקן על המחשב שלך ✅</div></div>';
+        } else {
+            title = 'מידע על התקנה';
+            steps =
+                '<div class="install-guide-step"><div class="step-num">ℹ️</div><div class="step-text">בדפדפן הזה אין תמיכה בהתקנת PWA ישירה</div></div>' +
+                '<div class="install-guide-step"><div class="step-num">💡</div><div class="step-text">לחווייה מיטבית, פתח בכרום (דסקטופ) או בספארי (iPhone)</div></div>';
+        }
         content.innerHTML =
-            '<span class="guide-icon">ℹ️</span>' +
-            '<div class="guide-title">מידע על התקנה</div>' +
-            '<div class="install-guide-step"><div class="step-num">ℹ️</div><div class="step-text">בדפדפן הזה אין תמיכה בהתקנת PWA ישירה</div></div>' +
-            '<p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">אפשר להשתמש באפליקציה ישירות מהדפדפן. לחווייה מיטבית, פתח בכרום (דסקטופ) או בספארי (iPhone).</p>';
+            '<span class="guide-icon">' + (isChrome ? '🖥️' : 'ℹ️') + '</span>' +
+            '<div class="guide-title">' + title + '</div>' + steps +
+            '<p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">כעת האפליקציה תיראה כמו אפ אמיתי — עם אייקון, מסך פתיחה, וחוויית מסך מלא!</p>';
         pwaBtn.style.display = 'none';
     }
 
@@ -1501,6 +1521,23 @@ function previewReceipt(event) {
         document.getElementById('receiptHint').style.display = 'none';
     };
     reader.readAsDataURL(file);
+}
+
+// ===== PWA INSTALL =====
+function handleInstallClick(e) {
+    // If Chrome has a native install prompt ready, use it
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+                showToast('האפליקציה הותקנה בהצלחה! 🎉', 'success');
+            }
+            deferredPrompt = null;
+        });
+    } else {
+        // Otherwise show the install guide modal
+        openInstallGuide();
+    }
 }
 
 async function submitTransaction() {
@@ -1632,33 +1669,37 @@ document.addEventListener('click', function(e) {
     });
   }
 
-  // ===== iOS PWA DETECTION =====
+  // ===== PWA STANDALONE DETECTION =====
   (function() {
-    // Fix status bar color for iOS standalone mode
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    var isStandalone = window.navigator.standalone === true;
-    if (isIOS && isStandalone) {
-      document.documentElement.style.setProperty('--safe-top', 'env(safe-area-inset-top)');
-      console.log('PWA: Running in iOS standalone mode');
+    var isStandalone = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) {
+      // Hide install button — app is already installed
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'none';
+      // Also hide iOS PWA banner
+      sessionStorage.setItem('pwaPromptShown', '1');
+      console.log('PWA: Running in standalone mode');
     }
   })();
-  // ===== iOS PWA INSTALL PROMPT + HEADER BUTTON =====
+
+  // Listen for successful PWA install
+  window.addEventListener('appinstalled', function() {
+    var installBtn = document.getElementById('installBtn');
+    if (installBtn) installBtn.style.display = 'none';
+    deferredPrompt = null;
+    showToast('האפליקציה הותקנה בהצלחה! 🎉', 'success');
+  });
+
+  // ===== iOS PWA AUTO-PROMPT =====
   (function() {
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     var isStandalone = window.navigator.standalone === true;
-
-    if (isIOS && !isStandalone) {
-      // Show install button in header
-      var installBtn = document.getElementById('installBtn');
-      if (installBtn) installBtn.style.display = 'inline-flex';
-
-      // Auto-show install guide on first visit (once per session)
-      if (!sessionStorage.getItem('pwaPromptShown')) {
-        setTimeout(function() {
-          openInstallGuide();
-          sessionStorage.setItem('pwaPromptShown', '1');
-        }, 2500);
-      }
+    if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
+      setTimeout(function() {
+        openInstallGuide();
+        sessionStorage.setItem('pwaPromptShown', '1');
+      }, 2500);
     }
   })();
 </script>
