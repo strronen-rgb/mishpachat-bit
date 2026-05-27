@@ -86,16 +86,20 @@ async function getAllUsers() {
 async function getUserBalance(userId) {
     const received = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'receive'", [userId]);
     const given = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'give'", [userId]);
-    return given.total - received.total;
+    // balance: positive = member owes fund (deposits > withdrawals)
+    return received.total - given.total;
 }
 
 async function getFullBalance(userId) {
     const received = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'receive'", [userId]);
     const given = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'give'", [userId]);
     return {
-        given: given.total,
-        received: received.total,
-        balance: given.total - received.total
+        // 'receive' = הפקדה: קופה נתנה לבן משפחה → הוא חייב לקופה (חובה)
+        deposits: received.total,
+        // 'give' = משיכה: קופה החזירה לבן משפחה → זכות / הפחתת חוב
+        withdrawals: given.total,
+        // balance: positive = בן משפחה חייב לקופה, negative = הקופה חייבת לו
+        balance: received.total - given.total
     };
 }
 
@@ -103,9 +107,13 @@ async function getFamilyDebt(userId) {
     const received = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'receive'", [userId]);
     const given = await get("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'give'", [userId]);
     return {
+        // deposits = הפקדות: קופה נתנה → בן משפחה חייב
+        totalDeposits: received.total,
+        // withdrawals = משיכות: קופה החזירה → זכות
+        totalWithdrawals: given.total,
         totalReceived: received.total,
         totalGiven: given.total,
-        balance: given.total - received.total
+        balance: received.total - given.total
     };
 }
 
@@ -113,17 +121,22 @@ async function getAdminDashboard() {
     const members = await getAllMembers();
     const dashboard = [];
     let totalOwed = 0;
+    let pendingWithdrawals = 0;
     for (const m of members) {
         const bal = await getFullBalance(m.id);
-        if (bal.balance < 0) totalOwed += Math.abs(bal.balance);
+        // positive balance = member owes money to the fund
+        if (bal.balance > 0) totalOwed += bal.balance;
         dashboard.push({
             ...m,
             balance: bal.balance,
-            total_given: bal.given,
-            total_received: bal.received
+            total_deposits: bal.deposits,    // הפקדות: קופה נתנה לבן משפחה
+            total_withdrawals: bal.withdrawals  // משיכות: קופה החזירה
         });
     }
-    return { members: dashboard, total_owed: totalOwed };
+    // Count pending withdrawal requests
+    const pendingReqs = await getAllWithdrawalRequests('pending');
+    pendingWithdrawals = pendingReqs.length;
+    return { members: dashboard, total_owed: totalOwed, pending_withdrawals: pendingWithdrawals };
 }
 
 // ---- TRANSACTION FUNCTIONS ----

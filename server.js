@@ -280,10 +280,11 @@ app.post('/api/member/withdraw-request', requireAuth, async (req, res) => {
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json({ error: 'סכום לא תקיף' });
         }
-        // Check balance
+        // Check balance: can only withdraw when fund owes them (negative balance = more withdrawals than deposits)
         const balance = await db.getFullBalance(req.user.id);
-        if (Math.abs(balance.balance) < parseFloat(amount)) {
-            return res.status(400).json({ error: 'אין מספיק יתרה לביצוע המשיכה', available: Math.abs(balance.balance) });
+        const availableToWithdraw = balance.balance < 0 ? Math.abs(balance.balance) : 0;
+        if (availableToWithdraw < parseFloat(amount)) {
+            return res.status(400).json({ error: 'אין מספיק יתרה לביצוע המשיכה', available: availableToWithdraw });
         }
         const result = await db.createWithdrawalRequest(req.user.id, parseFloat(amount), description || '');
         res.json({ success: true, request: result });
