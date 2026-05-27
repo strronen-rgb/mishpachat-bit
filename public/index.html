@@ -575,6 +575,21 @@
         .sound-toggle button { width: 48px; height: 48px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); backdrop-filter: blur(20px); box-shadow: var(--shadow); cursor: pointer; font-size: 1.3em; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
         .sound-toggle button:hover { transform: scale(1.1); }
 
+        /* ===== INSTALL GUIDE MODAL ===== */
+        .install-guide-modal { text-align: center; padding: 8px 0; }
+        .install-guide-modal .guide-icon { font-size: 3.5em; margin-bottom: 12px; display: block; }
+        .install-guide-modal .guide-title { font-size: 1.3em; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+        .install-guide-step { display: flex; align-items: center; gap: 14px; padding: 12px 16px; margin: 8px 0; background: rgba(108,99,255,0.08); border-radius: 14px; border: 1px solid rgba(108,99,255,0.12); text-align: right; }
+        .install-guide-step .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; font-weight: 700; font-size: 0.9em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .install-guide-step .step-text { font-size: 0.95em; line-height: 1.4; color: var(--text); }
+        .install-guide-step .step-text strong { color: var(--primary-light); }
+        .install-guide-modal .guide-btn-install { margin-top: 18px; width: 100%; padding: 14px; font-size: 1.05em; }
+        .install-guide-modal .guide-btn-dismiss { margin-top: 8px; background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 0.85em; padding: 8px; }
+        .install-guide-modal .share-icon-demo { font-size: 1.3em; display: inline-block; margin: 0 2px; }
+        /* Install button in header */
+        #installBtn { display: none; background: none; border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 6px 12px; border-radius: 10px; font-size: 0.85em; transition: all 0.2s; }
+        #installBtn:hover { border-color: var(--primary); color: var(--primary-light); }
+
         /* ===== ADMIN MEMBER SELECT ===== */
         .admin-member-select { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 
@@ -638,6 +653,7 @@
                 <div class="header-user">
                     <div id="memberAvatar" class="avatar avatar-sm"><span class="initials"></span></div>
                     <span id="memberName" class="header-user-name"></span>
+                    <button id="installBtn" onclick="openInstallGuide()">📲 התקן</button>
                     <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
                 </div>
             </div>
@@ -845,6 +861,38 @@
 
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
+
+    <!-- INSTALL GUIDE MODAL -->
+    <div id="installGuideModal" class="modal-overlay" onclick="if(event.target===this)closeInstallGuide()">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <div class="install-guide-modal">
+                <span class="guide-icon">📱</span>
+                <div class="guide-title">התקן את משפחביט כאפליקציית אייפון!</div>
+                <div class="install-guide-step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">פתח את האתר <strong>בספארי</strong> (לא בכרום)</div>
+                </div>
+                <div class="install-guide-step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">לחץ על כפתור <strong>שתף</strong> (Share) בתחתית המסך ↑</div>
+                </div>
+                <div class="install-guide-step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">גולל למטה ולחץ <strong>הוסף למסך הבית</strong></div>
+                </div>
+                <div class="install-guide-step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">לחץ <strong>הוסף</strong> פינה ימינה עליונה ✅</div>
+                </div>
+                <p style="color:var(--text-light);font-size:0.82em;margin-top:14px;">כעת האפליקציה תיראה כמו אפ אמיתי — עם אייקון על מסך הבית, מסך פתיחה, וחוויית מסך מלא!</p>
+            </div>
+            <div class="modal-actions" style="flex-direction:column;gap:8px;">
+                <button class="btn btn-primary guide-btn-install" onclick="closeInstallGuide()" style="margin-top:4px;">✅ הבנתי!</button>
+                <button class="guide-btn-dismiss" onclick="closeInstallGuide()">סגור</button>
+            </div>
+        </div>
+    </div>
 
     <!-- SOUND TOGGLE -->
     <div class="sound-toggle">
@@ -1393,7 +1441,9 @@ function openModal(type) {
     setTimeout(()=>document.getElementById('txnAmount').focus(),150);
 }
 function closeModal() { document.getElementById('txnModal').classList.remove('active'); }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAdminModal();}});
+function closeInstallGuide() { document.getElementById('installGuideModal').classList.remove('active'); }
+function openInstallGuide() { document.getElementById('installGuideModal').classList.add('active'); }
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAdminModal();closeInstallGuide();}});
 function previewReceipt(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1546,26 +1596,23 @@ document.addEventListener('click', function(e) {
       console.log('PWA: Running in iOS standalone mode');
     }
   })();
-  // ===== iOS ADD TO HOME SCREEN PROMPT =====
+  // ===== iOS PWA INSTALL PROMPT + HEADER BUTTON =====
   (function() {
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     var isStandalone = window.navigator.standalone === true;
-    if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
-      // Show a subtle banner after 2 seconds
-      setTimeout(function() {
-        var banner = document.createElement('div');
-        banner.id = 'iosPwaBanner';
-        banner.innerHTML =
-          '<div style="position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,0.4);">' +
-          '<span style="font-size:24px;">📲</span>' +
-          '<div style="flex:1;text-align:right;font-size:14px;line-height:1.4;">' +
-          '<div style="font-weight:600;color:var(--text);">הוסף משפחביט למסך הבית</div>' +
-          '<div style="font-size:12px;color:var(--text-light);">פתח בספארי → ‎<span style="font-family:san-serif;">⎋</span> שתף → הוסף למסך הבית</div>' +
-          '</div>' +
-          '<button onclick="this.parentElement.remove();sessionStorage.setItem(\'pwaPromptShown\',\'1\')" style="background:none;border:none;color:var(--text-light);font-size:20px;cursor:pointer;padding:4px;">✕</button>' +
-          '</div>';
-        document.body.appendChild(banner);
-      }, 2000);
+
+    if (isIOS && !isStandalone) {
+      // Show install button in header
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'inline-flex';
+
+      // Auto-show install guide on first visit (once per session)
+      if (!sessionStorage.getItem('pwaPromptShown')) {
+        setTimeout(function() {
+          openInstallGuide();
+          sessionStorage.setItem('pwaPromptShown', '1');
+        }, 2500);
+      }
     }
   })();
 </script>
